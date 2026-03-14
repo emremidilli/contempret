@@ -14,4 +14,4 @@ RUN pip install --upgrade pip && \
 COPY /task /app
 WORKDIR /app
 
-ENTRYPOINT [ "python" ]
+# ENTRYPOINT [ "python" ]

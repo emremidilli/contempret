@@ -5,6 +5,8 @@ services:
     image: app_contempret:latest
     build:
       context: .
+    volumes:
+      - ./bin:/app/bin
     deploy:
       resources:
         reservations:
