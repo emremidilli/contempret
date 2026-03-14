@@ -1,0 +1,14 @@
+version: "3.9"
+
+services:
+  app_contempret:
+    image: app_contempret:latest
+    build:
+      context: .
+    deploy:
+      resources:
+        reservations:
+          devices:
+          - driver: nvidia
+            count: -1
+            capabilities: [gpu]
