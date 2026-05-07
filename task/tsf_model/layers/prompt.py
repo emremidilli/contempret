@@ -122,3 +122,7 @@ class SoftPrompts(tf.keras.layers.Layer):
             'custom_prompt_keys': self.custom_prompt_keys
         })
         return config
+
+    @classmethod
+    def from_config(cls, config):
+        return cls(**config)

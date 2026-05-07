@@ -17,6 +17,23 @@ from utils import (
     save_npy)
 
 
+def test_if_query_weigts_are_same(model_pt:tf.keras.Model, model_ft: tf.keras.Model):
+    for layer_pt, layer_ft in zip(model_pt.encoder_representation.encoders_temporal.layers, model_ft.encoder_representation.encoders_temporal.layers):
+        if '_input' in layer_pt.name: # ignore input layer
+            continue
+
+        if hasattr(layer_pt.attention, '_query_dense') and hasattr(layer_ft.attention, '_query_dense'):
+
+            weights_pt = layer_pt.attention._query_dense.weights[0].numpy()
+            weights_ft = layer_ft.attention._query_dense.weights[0].numpy()
+
+            # if (weights_pt == weights_ft).all():
+            if np.allclose(weights_pt, weights_ft, atol=1e-6):
+                return True
+            else:
+                return False
+
+
 if __name__ == '__main__':
     '''Fine tunes a pre-trained model.'''
     # parse args
@@ -53,6 +70,12 @@ if __name__ == '__main__':
     ds_train = ds_train.batch(mini_batch_size).prefetch(tf.data.AUTOTUNE)
     ds_val = ds_val.batch(mini_batch_size).prefetch(tf.data.AUTOTUNE)
     ds_test = ds_test.batch(mini_batch_size).prefetch(tf.data.AUTOTUNE)
+
+    for x, y in ds_train.take(1):
+        dummy_input = x
+        break
+
+    _ = pre_trained_model(dummy_input, training=False)
 
     # build model
     try:
@@ -109,11 +132,48 @@ if __name__ == '__main__':
             res_embedding=pre_trained_model.res_embedding,
             tune_time2vec=tune_time2vec)
 
+        for x, y in ds_train.take(1):
+            dummy_input = x
+            break
+
+        _ = model(dummy_input, training=False)
+
+        model.trainable = False
+        # model.tre_embedding.trainable = False
+        # model.sea_embedding.trainable = False
+        # model.res_embedding.trainable = False
+
+        # if model.trend_prompt is not None:
+        #     model.trend_prompt.trainable = True
+
+        # if model.seasonality_prompt is not None:
+        #     model.seasonality_prompt.trainable = True
+
+        # if model.residual_prompt is not None:
+        #     model.residual_prompt.trainable = True
+
+        # # model.encoder_representation.trainable = True
+        # for enc in model.encoder_representation.encoders_temporal:
+        #     enc.attention.trainable = False
+        #     enc.attention._query_dense.trainable = False
+        #     enc.attention._key_dense.trainable = False
+        #     enc.attention._value_dense.trainable = False
+        #     enc.attention._output_dense.trainable = False
+
+        #     enc.feedforward.trainable = False
+
+        # if model.encoder_representation.time2vec is not None:
+        #     model.encoder_representation.time2vec.trainable = tune_time2vec
+
+        print("Encoder Rep ID Match (before compile):", test_if_query_weigts_are_same(pre_trained_model, model))
+
         model.compile(
             run_eagerly=False,
             optimizer=optimizer,
             loss=loss_fn,
             metrics=metrics_fn)
+
+        print("Encoder Rep ID Match (before fit):", test_if_query_weigts_are_same(pre_trained_model, model))
 
         # fit model (briefly)
         history = model.fit(
@@ -122,6 +182,8 @@ if __name__ == '__main__':
             verbose=2,
             validation_data=ds_val,
             shuffle=False)
+
+        print("Encoder Rep ID Match (after fit):", test_if_query_weigts_are_same(pre_trained_model, model))
 
         val_loss = history.history['val_loss'][-1]
 
@@ -132,6 +194,8 @@ if __name__ == '__main__':
 
     # Load the best initialization
     model.set_weights(best_model_weights)
+
+    print("Encoder Rep ID Match (after set_weights):", test_if_query_weigts_are_same(pre_trained_model, model))
 
     # define callbacks
     terminate_on_nan_callback = tf.keras.callbacks.TerminateOnNaN()
@@ -158,6 +222,8 @@ if __name__ == '__main__':
         shuffle=False,
         callbacks=callbacks)
 
+    print("Encoder Rep ID Match (after final fit):", test_if_query_weigts_are_same(pre_trained_model, model))
+
     # predict
     actual_train, pred_train = predict_fine_tune(
         model=model,
@@ -168,6 +234,8 @@ if __name__ == '__main__':
     actual_test, pred_test = predict_fine_tune(
         model=model,
         ds=ds_test)
+
+    print("Encoder Rep ID Match (after inferences):", test_if_query_weigts_are_same(pre_trained_model, model))
 
     # calculate metrics
     metrics = get_metrics(
@@ -183,6 +251,17 @@ if __name__ == '__main__':
         os.path.join(output_dir, 'saved_model'),
         overwrite=True,
         save_format='tf')
+
+    model.save_weights(os.path.join(output_dir, 'model_weights.h5'))
+
+    print("Encoder Rep ID Match (before reload):", test_if_query_weigts_are_same(pre_trained_model, model))
+
+    model_new = tf.keras.models.load_model(
+        os.path.join(output_dir, 'saved_model'))
+
+    print("Encoder Rep ID Match (after reload):", test_if_query_weigts_are_same(pre_trained_model, model_new))
+
+    print("Encoder Rep ID Match (before vs after):", test_if_query_weigts_are_same(model, model_new))
 
     save_json(metrics, output_dir, 'metrics.json')
     save_json(vars(args), output_dir, 'params.json')

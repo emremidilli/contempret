@@ -37,7 +37,7 @@ python tune_hyperparameters.py \
 ```bash
 python pre_train.py \
   --input_dir="./bin/preprocessed/ETTh1_OT_96" \
-  --output_dir="./bin/models/ETTh1_OT_96/" \
+  --output_dir="./bin/models/pt09/" \
   --mask_rate=0.40 \
   --mask_scalar=0.00 \
   --mini_batch_size=64 \
@@ -65,8 +65,11 @@ python pre_train.py \
   --nr_of_most_similar_prompts=11 \
   --patience=20 \
   --warmup_epochs_early_stopping=100\
-  --nr_of_seeds=10\
-  --nr_of_epochs=1000
+  --nr_of_seeds=1\
+  --nr_of_epochs=5
+
+  # --nr_of_seeds=10\
+  # --nr_of_epochs=1000
 ```
 
 #### Fine-tuning for full-shot
@@ -74,9 +77,16 @@ python pre_train.py \
 ```bash
 python fine_tune.py \
   --input_dir="./bin/input_representation/ETTh1_ALL_96_96/" \
-  --output_dir="./bin/models/ETTh1_ALL_96_96/" \
-  --pre_trained_model_dir="./bin/models/ETTh1_OT_96/" \
-  --mini_batch_size=128 --patience="50" --clip_norm="0.1" --nr_of_epochs="10000" \
-  --learning_rate="0.0001" --warmup_epochs="1" --tune_time2vec="True" --nr_of_seeds="10"
+  --output_dir="./bin/models/ft20/" \
+  --pre_trained_model_dir="./bin/models/pt09/" \
+  --patience="50" --clip_norm="0.1" \
+  --learning_rate="0.0001" --warmup_epochs="1" --tune_time2vec="True" \
+  --nr_of_seeds="2" \
+  --nr_of_epochs="5" \
+  --mini_batch_size=128
+
+  #--mini_batch_size=128
+  # --nr_of_seeds="10" \
+  # --nr_of_epochs="10000"
 ```
 
