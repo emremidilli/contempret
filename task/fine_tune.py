@@ -75,12 +75,6 @@ if __name__ == '__main__':
     ds_val = ds_val.batch(mini_batch_size).prefetch(tf.data.AUTOTUNE)
     ds_test = ds_test.batch(mini_batch_size).prefetch(tf.data.AUTOTUNE)
 
-    for x, y in ds_train.take(1):
-        dummy_input = x
-        break
-
-    _ = pre_trained_model(dummy_input, training=False)
-
     # build model
     try:
         trend_prompt = pre_trained_model.trend_prompt

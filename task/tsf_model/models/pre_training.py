@@ -145,11 +145,12 @@ class PreTraining(tf.keras.Model):
         self.l2_seasonality = l2_seasonality
         self.l1_residual = l1_residual
         self.l2_residual = l2_residual
-        self.prefer_dense_to_time2vec = \
-            prefer_dense_to_time2vec
+        self.prefer_dense_to_time2vec = prefer_dense_to_time2vec
         self.custom_prompt_keys_trend = custom_prompt_keys_trend
         self.custom_prompt_keys_seasonality = custom_prompt_keys_seasonality
         self.custom_prompt_keys_residual = custom_prompt_keys_residual
+
+        self.nr_of_patches = self.nr_of_timesteps // self.patch_size
 
         self.revIn_tre = ReversibleInstanceNormalization(
             nr_of_covariates=nr_of_covariates,
@@ -167,13 +168,37 @@ class PreTraining(tf.keras.Model):
             patch_size=patch_size,
             nr_of_covariates=nr_of_covariates)
 
-        self.trend_prompt = None
-        self.seasonality_prompt = None
-        self.residual_prompt = None
-
         self.patch_masker = PatchMasker(msk_scalar=msk_scalar)
 
         self.timestep_shifter = TimeStepShifter()
+
+        self.trend_prompt = None
+        self.seasonality_prompt = None
+        self.residual_prompt = None
+        if self.prompt_pool_size > 0:
+            self.trend_prompt = SoftPrompts(
+                key_dims=self.nr_of_timesteps * self.nr_of_covariates,
+                embedding_dims=self.embedding_dims,
+                nr_of_query_patches=self.nr_of_patches,
+                prompt_pool_size=self.prompt_pool_size,
+                nr_of_most_similar_prompts=self.nr_of_most_similar_prompts,
+                custom_prompt_keys=self.custom_prompt_keys_trend)
+
+            self.seasonality_prompt = SoftPrompts(
+                key_dims=self.nr_of_timesteps * self.nr_of_covariates,
+                embedding_dims=self.embedding_dims,
+                nr_of_query_patches=self.nr_of_patches,
+                prompt_pool_size=self.prompt_pool_size,
+                nr_of_most_similar_prompts=self.nr_of_most_similar_prompts,
+                custom_prompt_keys=self.custom_prompt_keys_seasonality)
+
+            self.residual_prompt = SoftPrompts(
+                key_dims=self.nr_of_timesteps * self.nr_of_covariates,
+                embedding_dims=self.embedding_dims,
+                nr_of_query_patches=self.nr_of_patches,
+                prompt_pool_size=self.prompt_pool_size,
+                nr_of_most_similar_prompts=self.nr_of_most_similar_prompts,
+                custom_prompt_keys=self.custom_prompt_keys_residual)
 
         self.tre_embedding = tf.keras.layers.Dense(
             units=self.embedding_dims,
@@ -221,13 +246,11 @@ class PreTraining(tf.keras.Model):
 
         # learning rate tracker
         self.lr_tracker = tf.keras.metrics.Mean(name='lr')
+
         # losses
-        self.loss_tracker_mae_comp = \
-            tf.keras.metrics.Mean(name='loss_mae_comp')
-        self.loss_tracker_mae_tre = \
-            tf.keras.metrics.Mean(name='loss_mae_tre')
-        self.loss_tracker_mae_sea = \
-            tf.keras.metrics.Mean(name='loss_mae_sea')
+        self.loss_tracker_mae_comp = tf.keras.metrics.Mean(name='loss_mae_comp')
+        self.loss_tracker_mae_tre = tf.keras.metrics.Mean(name='loss_mae_tre')
+        self.loss_tracker_mae_sea = tf.keras.metrics.Mean(name='loss_mae_sea')
         self.loss_tracker_cl = tf.keras.metrics.Mean(name='loss_cl')
 
         # metrics
@@ -240,8 +263,7 @@ class PreTraining(tf.keras.Model):
         self.cos_true = tf.keras.metrics.CosineSimilarity(name='cos_true')
         self.cos_false = tf.keras.metrics.CosineSimilarity(name='cos_false')
 
-        self.mae_composed = \
-            tf.keras.metrics.Mean(name='mae_composed')
+        self.mae_composed = tf.keras.metrics.Mean(name='mae_composed')
 
         self.masks = tf.Variable(
             initial_value=False,
@@ -297,15 +319,42 @@ class PreTraining(tf.keras.Model):
         config = super().get_config()
 
         config.update({
+            'nr_of_covariates': self.nr_of_covariates,
+            'patch_size': self.patch_size,
+            'nr_of_encoder_blocks': self.nr_of_encoder_blocks,
+            'nr_of_heads': self.nr_of_heads,
+            'dropout_rate': self.dropout_rate,
+            'encoder_ffn_units': self.encoder_ffn_units,
+            'embedding_dims': self.embedding_dims,
+            'projection_head_units': self.projection_head_units,
+            'msk_scalar': self.msk_scalar,
+            'nr_of_timesteps': self.nr_of_timesteps,
+            'contrastive_learning_patches': self.contrastive_learning_patches,
+            'mae_threshold_comp': self.mae_threshold_comp,
+            'mae_threshold_tre': self.mae_threshold_tre,
+            'mae_threshold_sea': self.mae_threshold_sea,
+            'cl_margin': self.cl_margin,
+            'prompt_pool_size': self.prompt_pool_size,
+            'nr_of_most_similar_prompts': self.nr_of_most_similar_prompts,
+            'use_time2vec': self.use_time2vec,
+            'force_mae_comp': self.force_mae_comp,
+            'force_mae_tre': self.force_mae_tre,
+            'force_mae_sea': self.force_mae_sea,
+            'force_cl': self.force_cl,
+            'l1_trend': self.l1_trend,
+            'l2_trend': self.l2_trend,
+            'l1_seasonality': self.l1_seasonality,
+            'l2_seasonality': self.l2_seasonality,
+            'l1_residual': self.l1_residual,
+            'l2_residual': self.l2_residual,
+            'prefer_dense_to_time2vec': self.prefer_dense_to_time2vec,
             'custom_prompt_keys_trend': self.custom_prompt_keys_trend,
             'custom_prompt_keys_seasonality': self.custom_prompt_keys_seasonality,
             'custom_prompt_keys_residual': self.custom_prompt_keys_residual,
-            'trend_prompt': self.trend_prompt,
-            'seasonality_prompt': self.seasonality_prompt,
-            'residual_prompt': self.residual_prompt
         })
         return config
 
+    @classmethod
     def from_config(cls, config):
         return cls(**config)
 
@@ -944,33 +993,6 @@ class PreTraining(tf.keras.Model):
         sea_patch = self.patch_tokenizer(sea_norm)
         res_patch = self.patch_tokenizer(res_norm)
 
-        if self.trend_prompt is None and self.prompt_pool_size > 0:
-            self.trend_prompt = SoftPrompts(
-                key_dims=self.nr_of_timesteps * self.nr_of_covariates,
-                embedding_dims=self.embedding_dims,
-                nr_of_query_patches=tre_patch.shape[-2],
-                prompt_pool_size=self.prompt_pool_size,
-                nr_of_most_similar_prompts=self.nr_of_most_similar_prompts,
-                custom_prompt_keys=self.custom_prompt_keys_trend)
-
-        if self.seasonality_prompt is None and self.prompt_pool_size > 0:
-            self.seasonality_prompt = SoftPrompts(
-                key_dims=self.nr_of_timesteps * self.nr_of_covariates,
-                embedding_dims=self.embedding_dims,
-                nr_of_query_patches=sea_patch.shape[-2],
-                prompt_pool_size=self.prompt_pool_size,
-                nr_of_most_similar_prompts=self.nr_of_most_similar_prompts,
-                custom_prompt_keys=self.custom_prompt_keys_seasonality)
-
-        if self.residual_prompt is None and self.prompt_pool_size > 0:
-            self.residual_prompt = SoftPrompts(
-                key_dims=self.nr_of_timesteps * self.nr_of_covariates,
-                embedding_dims=self.embedding_dims,
-                nr_of_query_patches=res_patch.shape[-2],
-                prompt_pool_size=self.prompt_pool_size,
-                nr_of_most_similar_prompts=self.nr_of_most_similar_prompts,
-                custom_prompt_keys=self.custom_prompt_keys_residual)
-
         tre_true, sea_true, res_true, tre_false, sea_false, res_false = \
             self.augment_pairs((tre_patch, sea_patch, res_patch))
 
@@ -991,26 +1013,17 @@ class PreTraining(tf.keras.Model):
             sea_prompts = self.seasonality_prompt(sea_norm)
             res_prompts = self.residual_prompt(res_norm)
 
-            tre_anchor_embed = \
-                self.timesteps_concatter([tre_prompts, tre_anchor_embed])
-            sea_anchor_embed = \
-                self.timesteps_concatter([sea_prompts, sea_anchor_embed])
-            res_anchor_embed = \
-                self.timesteps_concatter([res_prompts, res_anchor_embed])
+            tre_anchor_embed = self.timesteps_concatter([tre_prompts, tre_anchor_embed])
+            sea_anchor_embed = self.timesteps_concatter([sea_prompts, sea_anchor_embed])
+            res_anchor_embed = self.timesteps_concatter([res_prompts, res_anchor_embed])
 
-            tre_false_embed = \
-                self.timesteps_concatter([tre_prompts, tre_false_embed])
-            sea_false_embed = \
-                self.timesteps_concatter([sea_prompts, sea_false_embed])
-            res_false_embed = \
-                self.timesteps_concatter([res_prompts, res_false_embed])
+            tre_false_embed = self.timesteps_concatter([tre_prompts, tre_false_embed])
+            sea_false_embed = self.timesteps_concatter([sea_prompts, sea_false_embed])
+            res_false_embed = self.timesteps_concatter([res_prompts, res_false_embed])
 
-            tre_true_embed = \
-                self.timesteps_concatter([tre_prompts, tre_true_embed])
-            sea_true_embed = \
-                self.timesteps_concatter([sea_prompts, sea_true_embed])
-            res_true_embed = \
-                self.timesteps_concatter([res_prompts, res_true_embed])
+            tre_true_embed = self.timesteps_concatter([tre_prompts, tre_true_embed])
+            sea_true_embed = self.timesteps_concatter([sea_prompts, sea_true_embed])
+            res_true_embed = self.timesteps_concatter([res_prompts, res_true_embed])
 
         x_cont_temp_true = self.encoder_representation(
             (tre_true_embed, sea_true_embed, res_true_embed, dates))
@@ -1053,33 +1066,6 @@ class PreTraining(tf.keras.Model):
 
         tre_patch, sea_patch, res_patch = self.patch_masker(
             (tre_patch, sea_patch, res_patch, self.masks))
-
-        if self.trend_prompt is None and self.prompt_pool_size > 0:
-            self.trend_prompt = SoftPrompts(
-                key_dims=self.nr_of_timesteps * self.nr_of_covariates,
-                embedding_dims=self.embedding_dims,
-                nr_of_query_patches=tre_patch.shape[-2],
-                prompt_pool_size=self.prompt_pool_size,
-                nr_of_most_similar_prompts=self.nr_of_most_similar_prompts,
-                custom_prompt_keys=self.custom_prompt_keys_trend)
-
-        if self.seasonality_prompt is None and self.prompt_pool_size > 0:
-            self.seasonality_prompt = SoftPrompts(
-                key_dims=self.nr_of_timesteps * self.nr_of_covariates,
-                embedding_dims=self.embedding_dims,
-                nr_of_query_patches=sea_patch.shape[-2],
-                prompt_pool_size=self.prompt_pool_size,
-                nr_of_most_similar_prompts=self.nr_of_most_similar_prompts,
-                custom_prompt_keys=self.custom_prompt_keys_seasonality)
-
-        if self.residual_prompt is None and self.prompt_pool_size > 0:
-            self.residual_prompt = SoftPrompts(
-                key_dims=self.nr_of_timesteps * self.nr_of_covariates,
-                embedding_dims=self.embedding_dims,
-                nr_of_query_patches=res_patch.shape[-2],
-                prompt_pool_size=self.prompt_pool_size,
-                nr_of_most_similar_prompts=self.nr_of_most_similar_prompts,
-                custom_prompt_keys=self.custom_prompt_keys_residual)
 
         tre_embed = self.tre_embedding(tre_patch)
         sea_embed = self.sea_embedding(sea_patch)
