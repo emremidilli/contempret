@@ -30,11 +30,13 @@ class ReversibleInstanceNormalization(tf.keras.layers.Layer):
             shape=(nr_of_covariates, ),
             initializer='ones',
             trainable=True,
+            dtype=self.dtype_policy.compute_dtype,
             name='gamma')
         self.beta = self.add_weight(
             shape=(nr_of_covariates, ),
             initializer='zeros',
             trainable=True,
+            dtype=self.dtype_policy.compute_dtype,
             name='beta')
 
     def call(self, inputs):
@@ -47,6 +49,9 @@ class ReversibleInstanceNormalization(tf.keras.layers.Layer):
         '''
         x = inputs
 
+        # Cast epsilon to input dtype
+        epsilon = tf.cast(self.epsilon, x.dtype)
+
         mu = tf.math.reduce_mean(x, axis=1)
         var = tf.math.reduce_variance(x, axis=1)
         var_adj = tf.math.add(var, self.epsilon)
@@ -55,7 +60,10 @@ class ReversibleInstanceNormalization(tf.keras.layers.Layer):
         z = tf.subtract(x, tf.expand_dims(mu, axis=1))
         r = tf.divide(z, tf.expand_dims(sigma, axis=1))
 
-        y = tf.math.multiply(r, self.gamma) + self.beta
+        gamma = tf.cast(self.gamma, x.dtype)
+        beta = tf.cast(self.beta, x.dtype)
+
+        y = tf.math.multiply(r, gamma) + beta
 
         return y
 
@@ -72,29 +80,25 @@ class ReversibleInstanceNormalization(tf.keras.layers.Layer):
         '''
         x, y_pred = inputs
 
+        # Cast epsilon to input dtype
+        target_dtype = y_pred.dtype
+        x = tf.cast(x, target_dtype)
+        epsilon = tf.cast(self.epsilon, target_dtype)
+
         mu = tf.math.reduce_mean(x, axis=1)
         var = tf.math.reduce_variance(x, axis=1)
         var_adj = tf.math.add(var, self.epsilon)
         sigma = tf.math.sqrt(var_adj)
 
-        k = tf.math.subtract(y_pred, self.beta)
+        gamma = tf.cast(self.gamma, target_dtype)
+        beta = tf.cast(self.beta, target_dtype)
 
-        m = tf.math.divide(k, self.gamma)
+        k = tf.math.subtract(y_pred, beta)
+
+        m = tf.math.divide(k, gamma)
 
         n = tf.math.multiply(tf.expand_dims(sigma, axis=1), m)
 
         y = tf.math.add(n, tf.expand_dims(mu, axis=1))
 
         return y
-
-    def get_config(self):
-        config = super().get_config()
-        config.update({
-            'nr_of_covariates': self.nr_of_covariates,
-            'epsilon': self.epsilon
-        })
-        return config
-
-    @classmethod
-    def from_config(cls, config):
-        return cls(**config)

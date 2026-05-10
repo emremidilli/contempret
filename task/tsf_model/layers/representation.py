@@ -88,20 +88,3 @@ class Representation(tf.keras.layers.Layer):
         x_temp = self.encoders_temporal(x_temp)
 
         return x_temp
-
-    def get_config(self):
-        config = super().get_config()
-        config.update({
-            'nr_of_encoder_blocks': self.nr_of_encoder_blocks,
-            'nr_of_heads': self.nr_of_heads,
-            'dropout_rate': self.dropout_rate,
-            'encoder_ffn_units': self.encoder_ffn_units,
-            'embedding_dims': self.embedding_dims,
-            'use_time2vec': self.use_time2vec,
-            'prefer_dense_to_time2vec': self.prefer_dense_to_time2vec,
-        })
-        return config
-
-    @classmethod
-    def from_config(cls, config):
-        return cls(**config)

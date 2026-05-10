@@ -53,6 +53,9 @@ if __name__ == '__main__':
     tune_time2vec = args.tune_time2vec
     nr_of_seeds = args.nr_of_seeds
 
+    # configure mixed precision policy
+    tf.keras.mixed_precision.set_global_policy("mixed_float16")
+
     # get inputs
     ds_train = tf.data.Dataset.load(
         path=os.path.join(input_dir, 'dataset_train'))
@@ -64,7 +67,8 @@ if __name__ == '__main__':
         path=os.path.join(input_dir, 'dataset_test'))
 
     pre_trained_model = tf.keras.models.load_model(
-        os.path.join(pre_trained_model_dir, 'saved_model'))
+        os.path.join(pre_trained_model_dir, 'model.keras'),
+        compile=False)
 
     # batch datasets
     ds_train = ds_train.batch(mini_batch_size).prefetch(tf.data.AUTOTUNE)
@@ -138,21 +142,21 @@ if __name__ == '__main__':
 
         _ = model(dummy_input, training=False)
 
-        model.trainable = False
-        # model.tre_embedding.trainable = False
-        # model.sea_embedding.trainable = False
-        # model.res_embedding.trainable = False
+        # model.trainable = False
+        model.tre_embedding.trainable = False
+        model.sea_embedding.trainable = False
+        model.res_embedding.trainable = False
 
-        # if model.trend_prompt is not None:
-        #     model.trend_prompt.trainable = True
+        if model.trend_prompt is not None:
+            model.trend_prompt.trainable = True
 
-        # if model.seasonality_prompt is not None:
-        #     model.seasonality_prompt.trainable = True
+        if model.seasonality_prompt is not None:
+            model.seasonality_prompt.trainable = True
 
-        # if model.residual_prompt is not None:
-        #     model.residual_prompt.trainable = True
+        if model.residual_prompt is not None:
+            model.residual_prompt.trainable = True
 
-        # # model.encoder_representation.trainable = True
+        model.encoder_representation.trainable = False
         # for enc in model.encoder_representation.encoders_temporal:
         #     enc.attention.trainable = False
         #     enc.attention._query_dense.trainable = False
@@ -247,17 +251,14 @@ if __name__ == '__main__':
 
     # save outputs
     os.makedirs(output_dir, exist_ok=True)
-    model.save(
-        os.path.join(output_dir, 'saved_model'),
-        overwrite=True,
-        save_format='tf')
 
-    model.save_weights(os.path.join(output_dir, 'model_weights.h5'))
+    model.save(os.path.join(output_dir, 'model.keras'))
 
     print("Encoder Rep ID Match (before reload):", test_if_query_weigts_are_same(pre_trained_model, model))
 
     model_new = tf.keras.models.load_model(
-        os.path.join(output_dir, 'saved_model'))
+        os.path.join(output_dir, 'model.keras'),
+        compile=False)
 
     print("Encoder Rep ID Match (after reload):", test_if_query_weigts_are_same(pre_trained_model, model_new))
 

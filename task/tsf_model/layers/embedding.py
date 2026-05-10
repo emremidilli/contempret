@@ -16,34 +16,36 @@ class PositionEmbedding(tf.keras.layers.Layer):
             bias_initializer='zeros')
 
     def positional_encoding(self, length, depth):
-        import numpy as np
+        depth = depth // 2
 
-        depth = depth / 2
+        positions = tf.range(length, dtype=tf.float32)[:, tf.newaxis]
+        depths = tf.range(depth, dtype=tf.float32)[tf.newaxis, :] / tf.cast(depth, tf.float32)
 
-        positions = np.arange(length)[:, np.newaxis]     # (seq, 1)
-        depths = np.arange(depth)[np.newaxis, :] / depth   # (1, depth)
+        angle_rates = 1 / tf.pow(10000.0, depths)
+        angle_rads = positions * angle_rates
 
-        angle_rates = 1 / (10000**depths)         # (1, depth)
-        angle_rads = positions * angle_rates      # (pos, depth)
+        pos_encoding = tf.concat(
+            [tf.sin(angle_rads), tf.cos(angle_rads)],
+            axis=-1
+        )
 
-        pos_encoding = np.concatenate(
-            [np.sin(angle_rads), np.cos(angle_rads)],
-            axis=-1)
+        # Cast to the layer's compute dtype (e.g., float16 under mixed precision)
+        return tf.cast(pos_encoding, self.dtype_policy.compute_dtype)
 
-        return tf.cast(pos_encoding, dtype=tf.float32)
+    def build(self, input_shape):
+        seq_len = input_shape[1]
+
+        self.pos_encoding = self.positional_encoding(
+            seq_len,
+            self.embedding_dims)
 
     def call(self, inputs):
         '''
         input: (None, timesteps, features)
         output: (None, timesteps, features)
         '''
-        pos_encodings = self.positional_encoding(
-            length=inputs.shape[1],
-            depth=self.embedding_dims)
-
         y = self.embedding(inputs)
-
-        return y + pos_encodings
+        return y + self.pos_encoding
 
 
 @tf.keras.saving.register_keras_serializable()
@@ -68,7 +70,7 @@ class Time2Vec(tf.keras.layers.Layer):
             linear_kernel_init = tf.keras.initializers.RandomUniform(
                 minval=-0.5,
                 maxval=0.5)
-            linear_bias_init   = tf.keras.initializers.Zeros()
+            linear_bias_init = tf.keras.initializers.Zeros()
 
             # Periodic term initializers
             PI = float(np.pi)
@@ -108,7 +110,7 @@ class Time2Vec(tf.keras.layers.Layer):
             linear = self.dense_linear(x)
 
             periodic = self.dense_periodic(x)
-            periodic = tf.keras.backend.sin(periodic)
+            periodic = tf.math.sin(periodic)
 
             embedded = self.concatter([linear, periodic])
 

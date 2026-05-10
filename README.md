@@ -35,9 +35,9 @@ python tune_hyperparameters.py \
 
 #### Pre-train foundational model
 ```bash
-python pre_train.py \
+python task/pre_train.py \
   --input_dir="./bin/preprocessed/ETTh1_OT_96" \
-  --output_dir="./bin/models/pt09/" \
+  --output_dir="./bin/models/pt24/" \
   --mask_rate=0.40 \
   --mask_scalar=0.00 \
   --mini_batch_size=64 \
@@ -51,8 +51,8 @@ python pre_train.py \
   --nr_of_encoder_blocks=2 \
   --nr_of_heads=2 \
   --dropout_rate=0.3 \
-  --encoder_ffn_units=384 \
-  --embedding_dims=256 \
+  --encoder_ffn_units=64 \
+  --embedding_dims=32 \
   --projection_head=16 \
   --warmup_steps=4000 \
   --scale_factor=1.0 \
@@ -66,8 +66,10 @@ python pre_train.py \
   --patience=20 \
   --warmup_epochs_early_stopping=100\
   --nr_of_seeds=1\
-  --nr_of_epochs=5
+  --nr_of_epochs=3
 
+  # --encoder_ffn_units=384 \
+  # --embedding_dims=256 \
   # --nr_of_seeds=10\
   # --nr_of_epochs=1000
 ```
@@ -75,14 +77,14 @@ python pre_train.py \
 #### Fine-tuning for full-shot
 
 ```bash
-python fine_tune.py \
+python task/fine_tune.py \
   --input_dir="./bin/input_representation/ETTh1_ALL_96_96/" \
-  --output_dir="./bin/models/ft20/" \
-  --pre_trained_model_dir="./bin/models/pt09/" \
+  --output_dir="./bin/models/ft24/" \
+  --pre_trained_model_dir="./bin/models/pt24/" \
   --patience="50" --clip_norm="0.1" \
   --learning_rate="0.0001" --warmup_epochs="1" --tune_time2vec="True" \
-  --nr_of_seeds="2" \
-  --nr_of_epochs="5" \
+  --nr_of_seeds="1" \
+  --nr_of_epochs="3" \
   --mini_batch_size=128
 
   #--mini_batch_size=128

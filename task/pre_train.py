@@ -61,6 +61,9 @@ if __name__ == '__main__':
     prefer_dense_to_time2vec = args.prefer_dense_to_time2vec
     nr_of_seeds = args.nr_of_seeds
 
+    # configure mixed precision policy
+    tf.keras.mixed_precision.set_global_policy("mixed_float16")
+
     if embedding_dims % nr_of_heads != 0:
         raise ValueError(
             f'embedding_dims={embedding_dims} must be divisible '
@@ -262,10 +265,7 @@ if __name__ == '__main__':
     save_json(history.history, output_dir, 'history.json')
 
     if not save_only_light_artifacts:
-        model.save(
-            os.path.join(output_dir, 'saved_model'),
-            overwrite=True,
-            save_format='tf')
+        model.save(os.path.join(output_dir, 'model.keras'))
 
         actual_train.save(os.path.join(output_dir, 'actual_train'))
         pred_train.save(os.path.join(output_dir, 'pred_train'))

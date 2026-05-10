@@ -12,7 +12,7 @@ class TransformerEncoder(tf.keras.layers.Layer):
                  feedforward_dim,
                  dropout_rate=0.1,
                  **kwargs):
-        super(TransformerEncoder, self).__init__(**kwargs)
+        super().__init__(**kwargs)
 
         self.embed_dim = embed_dim
         self.num_heads = num_heads
@@ -45,17 +45,3 @@ class TransformerEncoder(tf.keras.layers.Layer):
         out2 = self.norm2(out1 + ff_output)
 
         return out2
-
-    def get_config(self):
-        config = super(TransformerEncoder, self).get_config()
-        config.update({
-            "embed_dim": self.embed_dim,
-            "num_heads": self.num_heads,
-            "feedforward_dim": self.feedforward_dim,
-            "dropout_rate": self.dropout_rate,
-        })
-        return config
-
-    @classmethod
-    def from_config(cls, config):
-        return cls(**config)

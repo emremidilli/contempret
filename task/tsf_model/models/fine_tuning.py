@@ -43,15 +43,15 @@ class SequencePredictor(tf.keras.Model):
         self.decoder_tre = LinearHead(
             nr_of_timesteps=nr_of_timesteps,
             nr_of_covariates=1,
-            name='lienar_head_trend')
+            name='linear_head_trend')
         self.decoder_sea = LinearHead(
             nr_of_timesteps=nr_of_timesteps,
             nr_of_covariates=1,
-            name='lienar_head_seasonality')
+            name='linear_head_seasonality')
         self.decoder_res = LinearHead(
             nr_of_timesteps=nr_of_timesteps,
             nr_of_covariates=1,
-            name='lienar_head_residual')
+            name='linear_head_residual')
 
         self.patch_tokenizer = patch_tokenizer
         self.encoder_representation = encoder_representation
@@ -129,16 +129,11 @@ class SequencePredictor(tf.keras.Model):
                 'tre_embedding': tf.keras.layers.serialize(self.tre_embedding),
                 'sea_embedding': tf.keras.layers.serialize(self.sea_embedding),
                 'res_embedding': tf.keras.layers.serialize(self.res_embedding),
-                'patch_tokenizer': tf.keras.layers.serialize(
-                    self.patch_tokenizer),
-                'encoder_representation': tf.keras.layers.serialize(
-                    self.encoder_representation),
+                'patch_tokenizer': tf.keras.layers.serialize(self.patch_tokenizer),
+                'encoder_representation': tf.keras.layers.serialize(self.encoder_representation),
                 'trend_prompt': tf.keras.layers.serialize(self.trend_prompt),
                 'seasonality_prompt': tf.keras.layers.serialize(self.seasonality_prompt),
                 'residual_prompt': tf.keras.layers.serialize(self.residual_prompt),
-                'decoder_tre': tf.keras.layers.serialize(self.decoder_tre),
-                'decoder_sea': tf.keras.layers.serialize(self.decoder_sea),
-                'decoder_res': tf.keras.layers.serialize(self.decoder_res)
             }
         )
 
@@ -146,34 +141,17 @@ class SequencePredictor(tf.keras.Model):
 
     @classmethod
     def from_config(cls, config):
-        config['revIn_tre'] = tf.keras.layers.deserialize(
-            config['revIn_tre'])
-        config['revIn_sea'] = tf.keras.layers.deserialize(
-            config['revIn_sea'])
-        config['revIn_res'] = tf.keras.layers.deserialize(
-            config['revIn_res'])
-        config['tre_embedding'] = tf.keras.layers.deserialize(
-            config['tre_embedding'])
-        config['sea_embedding'] = tf.keras.layers.deserialize(
-            config['sea_embedding'])
-        config['res_embedding'] = tf.keras.layers.deserialize(
-            config['res_embedding'])
-        config['patch_tokenizer'] = tf.keras.layers.deserialize(
-            config['patch_tokenizer'])
-        config['encoder_representation'] = tf.keras.layers.deserialize(
-            config['encoder_representation'])
-        config['trend_prompt'] = tf.keras.layers.deserialize(
-            config['trend_prompt'])
-        config['seasonality_prompt'] = tf.keras.layers.deserialize(
-            config['seasonality_prompt'])
-        config['residual_prompt'] = tf.keras.layers.deserialize(
-            config['residual_prompt'])
-        config['decoder_tre'] = tf.keras.layers.deserialize(
-            config['decoder_tre'])
-        config['decoder_sea'] = tf.keras.layers.deserialize(
-            config['decoder_sea'])
-        config['decoder_res'] = tf.keras.layers.deserialize(
-            config['decoder_res'])
+        config['revIn_tre'] = tf.keras.layers.deserialize(config['revIn_tre'])
+        config['revIn_sea'] = tf.keras.layers.deserialize(config['revIn_sea'])
+        config['revIn_res'] = tf.keras.layers.deserialize(config['revIn_res'])
+        config['tre_embedding'] = tf.keras.layers.deserialize(config['tre_embedding'])
+        config['sea_embedding'] = tf.keras.layers.deserialize(config['sea_embedding'])
+        config['res_embedding'] = tf.keras.layers.deserialize(config['res_embedding'])
+        config['patch_tokenizer'] = tf.keras.layers.deserialize(config['patch_tokenizer'])
+        config['encoder_representation'] = tf.keras.layers.deserialize(config['encoder_representation'])
+        config['trend_prompt'] = tf.keras.layers.deserialize(config['trend_prompt'])
+        config['seasonality_prompt'] = tf.keras.layers.deserialize(config['seasonality_prompt'])
+        config['residual_prompt'] = tf.keras.layers.deserialize(config['residual_prompt'])
 
         return cls(**config)
 
@@ -215,7 +193,9 @@ class TimeSeriesClassifier(tf.keras.Model):
         self.res_embedding = res_embedding
 
         self.patch_tokenizer = patch_tokenizer
+
         self.encoder_representation = encoder_representation
+
         self.trend_prompt = trend_prompt
         self.seasonality_prompt = seasonality_prompt
         self.residual_prompt = residual_prompt
@@ -223,7 +203,7 @@ class TimeSeriesClassifier(tf.keras.Model):
         self.linear_head = LinearHead(
             nr_of_timesteps=nr_of_timesteps,
             nr_of_covariates=1,
-            name='lienar_head')
+            name='linear_head')
 
         self.sigmoid = tf.keras.layers.Activation('sigmoid')
 
@@ -241,10 +221,8 @@ class TimeSeriesClassifier(tf.keras.Model):
                 'tre_embedding': tf.keras.layers.serialize(self.tre_embedding),
                 'sea_embedding': tf.keras.layers.serialize(self.sea_embedding),
                 'res_embedding': tf.keras.layers.serialize(self.res_embedding),
-                'patch_tokenizer': tf.keras.layers.serialize(
-                    self.patch_tokenizer),
-                'encoder_representation': tf.keras.layers.serialize(
-                    self.encoder_representation),
+                'patch_tokenizer': tf.keras.layers.serialize(self.patch_tokenizer),
+                'encoder_representation': tf.keras.layers.serialize(self.encoder_representation),
                 'trend_prompt': tf.keras.layers.serialize(self.trend_prompt),
                 'seasonality_prompt': tf.keras.layers.serialize(self.seasonality_prompt),
                 'residual_prompt': tf.keras.layers.serialize(self.residual_prompt)

@@ -1,4 +1,4 @@
-FROM tensorflow/tensorflow:2.13.0rc2-gpu
+FROM tensorflow/tensorflow:2.15.0-gpu
 
 LABEL maintainer="yunusemremidilli@gmail.com"
 
@@ -11,7 +11,10 @@ RUN pip install --upgrade pip && \
     pip install -r /tmp/requirements.txt && \
     rm -rf /tmp/requirements.txt
 
-COPY /task /app
+ENV TF_ENABLE_ONEDNN_OPTS=0
+
+# TODO: Disable below code in production
+# COPY /task /app
 WORKDIR /app
 
 # ENTRYPOINT [ "python" ]

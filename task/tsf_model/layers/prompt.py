@@ -1,5 +1,3 @@
-import numpy as np
-
 import tensorflow as tf
 
 
@@ -39,35 +37,50 @@ class SoftPrompts(tf.keras.layers.Layer):
         self.key_dims = key_dims
         self.reshaper = tf.keras.layers.Reshape((key_dims,))
         self.custom_prompt_keys = custom_prompt_keys
-
-        # total prompt-related input should be half of the actual input.
-        half_of_actual_patches = nr_of_query_patches // 2
-        self.prompt_length = \
-            half_of_actual_patches // nr_of_most_similar_prompts
+        self.nr_of_query_patches = nr_of_query_patches
 
     def build(self, input_shape):
+        # ---- stable config values ----
+        key_dims = self.key_dims
+        embedding_dims = self.embedding_dims
+        prompt_pool_size = self.prompt_pool_size
+        nr_similar = self.nr_of_most_similar_prompts
+        query_patches = self.nr_of_query_patches
+
+        # ---- derive prompt length safely ----
+        # total prompt-related input should be half of the actual input.
+        prompt_length = (query_patches // 2) // nr_similar
+
+        # ---- prompt keys ----
         if self.custom_prompt_keys is not None:
-            key_initializer = tf.keras.initializers.Constant(
-                self.custom_prompt_keys)
-            shape = np.array(self.custom_prompt_keys).shape
+            custom_keys = tf.convert_to_tensor(
+                self.custom_prompt_keys,
+                dtype=self.dtype or tf.float32
+            )
+
+            key_initializer = tf.keras.initializers.Constant(custom_keys)
+            key_shape = tuple(custom_keys.shape)
         else:
             key_initializer = tf.keras.initializers.RandomNormal()
-            shape = (self.prompt_pool_size, self.key_dims)
+            key_shape = (prompt_pool_size, key_dims)
 
         self.prompt_keys = self.add_weight(
-            shape=shape,
+            name="prompt_keys",
+            shape=key_shape,
             initializer=key_initializer,
-            trainable=False,
-            name='prompt_keys')
+            trainable=False
+        )
 
+        # ---- prompt values ----
         self.prompt_values = self.add_weight(
-            shape=(
-                self.prompt_pool_size,
-                self.prompt_length,
-                self.embedding_dims),
-            initializer='random_uniform',
-            trainable=True,
-            name='prompt_values')
+            name="prompt_values",
+            shape=(prompt_pool_size, prompt_length, embedding_dims),
+            initializer="random_uniform",
+            trainable=True
+        )
+
+        # ---- IMPORTANT: mark built ----
+        super().build(input_shape)
 
     def call(self, inputs):
         '''
@@ -112,11 +125,10 @@ class SoftPrompts(tf.keras.layers.Layer):
 
     def get_config(self):
         config = super().get_config()
-
         config.update({
             'key_dims': self.key_dims,
             'embedding_dims': self.embedding_dims,
-            'prompt_length': self.prompt_length,
+            'nr_of_query_patches': self.nr_of_query_patches,
             'prompt_pool_size': self.prompt_pool_size,
             'nr_of_most_similar_prompts': self.nr_of_most_similar_prompts,
             'custom_prompt_keys': self.custom_prompt_keys
