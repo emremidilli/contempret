@@ -600,7 +600,7 @@ class PreTraining(tf.keras.Model):
 
         # masked auto-encoder (mae)
         y_pred_tre, y_pred_sea, y_pred_res, y_pred_composed = \
-            self(data, training=True, mask=mask)
+            self(data, training=True, mask=mask, task="reconstruction")
 
         mae_tre = self.calculate_masked_loss(
             y_pred=y_pred_tre,
@@ -627,7 +627,7 @@ class PreTraining(tf.keras.Model):
                 tasks_to_train,
                 tf.constant('msk_autoenc_comp'))):
             with tf.GradientTape() as tape:
-                y_pred_tre, y_pred_sea, y_pred_res, y_pred_composed = self(data, training=True, mask=mask)
+                y_pred_tre, y_pred_sea, y_pred_res, y_pred_composed = self(data, training=True, mask=mask, task="reconstruction")
 
                 # compute the loss values
                 loss_mae_comp = self.calculate_masked_loss(
@@ -678,7 +678,7 @@ class PreTraining(tf.keras.Model):
                 tasks_to_train,
                 tf.constant('msk_autoenc_tre'))):
             with tf.GradientTape() as tape:
-                y_pred_tre, y_pred_sea, y_pred_res, y_pred_composed = self(data, training=True, mask=mask)
+                y_pred_tre, y_pred_sea, y_pred_res, y_pred_composed = self(data, training=True, mask=mask, task="reconstruction")
 
                 # compute the loss values
                 loss_mae_comp = self.calculate_masked_loss(
@@ -723,7 +723,7 @@ class PreTraining(tf.keras.Model):
                 tasks_to_train,
                 tf.constant('msk_autoenc_sea'))):
             with tf.GradientTape() as tape:
-                y_pred_tre, y_pred_sea, y_pred_res, y_pred_composed = self(data, training=True, mask=mask)
+                y_pred_tre, y_pred_sea, y_pred_res, y_pred_composed = self(data, training=True, mask=mask, task="reconstruction")
 
                 # compute the loss values
                 loss_mae_comp = self.calculate_masked_loss(
@@ -765,7 +765,7 @@ class PreTraining(tf.keras.Model):
 
         # contrastive learning
         with tf.GradientTape() as tape:
-            y_logits_false, y_logits_true, y_logits_anchor = self.call_contrastive_learning(data, training=True, mask=cl_mask)
+            y_logits_false, y_logits_true, y_logits_anchor = self(data, training=True, mask=cl_mask, task="contrastive")
 
             # compute the loss value
             distance_true = tf.reduce_sum(
@@ -898,7 +898,7 @@ class PreTraining(tf.keras.Model):
         cl_mask = self.generate_mask(nr_of_timesteps=(self.nr_of_patches - self.contrastive_learning_patches))
 
         y_pred_tre, y_pred_sea, y_pred_res, y_pred_composed = \
-            self(data, training=False, mask=mask)
+            self(data, training=False, mask=mask, task="reconstruction")
 
         # compute the loss value
         loss_mae_comp = self.calculate_masked_loss(
@@ -974,9 +974,9 @@ class PreTraining(tf.keras.Model):
         self.cos_sea.update_state(cos_sea)
         self.cos_res.update_state(cos_res)
 
-        # augment pairs
+        # calculate contrastive learning logits
         y_logits_false, y_logits_true, y_logits_anchor = \
-            self.call_contrastive_learning(data, training=False, mask=cl_mask)
+            self(data, training=False, mask=cl_mask, task="contrastive")
 
         # compute the loss value
         distance_true = tf.reduce_sum(
@@ -1010,19 +1010,15 @@ class PreTraining(tf.keras.Model):
     def predict_step(self, data):
         mask = self.generate_mask(nr_of_timesteps=self.nr_of_patches)
         y_pred_tre, y_pred_sea, y_pred_res, _ = \
-            self(data, training=False, mask=mask)
+            self(data, training=False, mask=mask, task="reconstruction")
 
         return y_pred_tre, y_pred_sea, y_pred_res, mask
 
-    def call_contrastive_learning(self, inputs, training=False, mask=None):
-        '''
-        args:
-            inputs:
-                tre: (none, timesteps, covariates)
-                sea: (none, timesteps, covariates)
-                res: (none, timesteps, covariates)
-                dates: (none, features)
-        '''
+    def _contrastive_forward(
+        self,
+        inputs,
+        training=False,
+        mask=None):
 
         tre, sea, res, dates = inputs
 
@@ -1081,19 +1077,11 @@ class PreTraining(tf.keras.Model):
 
         return y_logits_false, y_logits_true, y_logits_anchor
 
-    def call(self, inputs, training=False, mask=None):
-        '''
-        args:
-            tre: (None, timesteps, covariates)
-            sea: (None, timesteps, covariates)
-            res: (None, timesteps, covariates)
-            dates: (None, features)
-        returns:
-            y_pred_tre: (None, timesteps, covariates)
-            y_pred_sea: (None, timesteps, covariates),
-            y_pred_res: (None, timesteps, covariates)
-            y_pred_composed: (None, timesteps, covariates)
-        '''
+    def _reconstruction_forward(
+        self,
+        inputs,
+        training=False,
+        mask=None):
 
         tre, sea, res, dates = inputs
 
@@ -1140,3 +1128,29 @@ class PreTraining(tf.keras.Model):
         y_pred_composed = y_pred_tre + y_pred_sea + y_pred_res
 
         return (y_pred_tre, y_pred_sea, y_pred_res, y_pred_composed)
+
+    def call(self, inputs, training=False, mask=None, task="reconstruction"):
+        '''
+        args:
+            tre: (None, timesteps, covariates)
+            sea: (None, timesteps, covariates)
+            res: (None, timesteps, covariates)
+            dates: (None, features)
+        '''
+
+        if task == "contrastive":
+            return self._contrastive_forward(
+                inputs,
+                training=training,
+                mask=mask
+            )
+
+        elif task == "reconstruction":
+            return self._reconstruction_forward(
+                inputs,
+                training=training,
+                mask=mask
+            )
+
+        else:
+            raise ValueError(task)
