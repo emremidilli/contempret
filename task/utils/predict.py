@@ -3,34 +3,6 @@ import tensorflow as tf
 from typing import Tuple
 
 
-def _unbatch_dataset_pt(
-        ds: tf.data.Dataset):
-    '''
-    covert tf.data.Dataset to single batch tensors.
-    it applies to only pre-training dataset.
-    '''
-
-    # Reverting back to separate tensors
-    tre_list, sea_list, res_list, ts_list = [], [], [], []
-
-    for tre_batch, sea_batch, res_batch, ts_batch in ds:
-        tre_list.append(tre_batch)
-        sea_list.append(sea_batch)
-        res_list.append(res_batch)
-        ts_list.append(ts_batch)
-
-    # Concatenate the lists to form tensors
-    tre = tf.concat(tre_list, axis=0)
-    sea = tf.concat(sea_list, axis=0)
-    res = tf.concat(res_list, axis=0)
-    ts = tf.concat(ts_list, axis=0)
-
-    new_ds = tf.data.Dataset.from_tensor_slices(
-        (tre, sea, res, ts))
-
-    return new_ds
-
-
 def predict_pre_train(
         model: tf.keras.Model,
         ds: tf.data.Dataset) -> Tuple[
@@ -41,16 +13,12 @@ def predict_pre_train(
     predicts an input dataset.
     it applies to pre-training model.
     '''
-    ds = _unbatch_dataset_pt(ds)
 
-    npy_input = list(ds.batch(len(ds)).as_numpy_iterator())[0]
-
-    pred_tre, pred_sea, pred_res, _ = \
-        model.predict(npy_input)
+    pred_tre, pred_sea, pred_res, mask = model.predict(ds)
 
     pred = tf.data.Dataset.from_tensor_slices((pred_tre, pred_sea, pred_res))
 
-    mask = tf.data.Dataset.from_tensor_slices(model.masks)
+    mask = tf.data.Dataset.from_tensor_slices(mask)
 
     return ds, pred, mask
 

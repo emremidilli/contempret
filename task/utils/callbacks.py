@@ -3,52 +3,6 @@ import gc
 import tensorflow as tf
 
 
-class MaskingCallback(tf.keras.callbacks.Callback):
-
-    def __init__(
-            self,
-            nr_of_patches: int,
-            masking_rate: float,
-            masks_feature: str = 'masks'):
-        super().__init__()
-        self.nr_of_patches = nr_of_patches
-        self.masking_rate = masking_rate
-        self.masks_feature = masks_feature
-
-    def set_mask_indices(self):
-        '''Sets patch indices to mask'''
-        nr_of_timesteps = self.nr_of_patches
-        nr_of_timesteps_to_mask = tf.cast(
-            tf.math.ceil(nr_of_timesteps * self.masking_rate),
-            dtype=tf.int32)
-
-        random_tensor = \
-            tf.random.uniform(shape=(nr_of_timesteps, ), minval=0, maxval=1)
-
-        sorted_indices = tf.argsort(random_tensor)
-
-        indices_to_mask = sorted_indices[: nr_of_timesteps_to_mask]
-
-        mask_condition = tf.reduce_any(  # noqa: F841
-            tf.equal(
-                tf.range(nr_of_timesteps)[:, tf.newaxis],
-                indices_to_mask), axis=1)
-
-        setattr(self.model, self.masks_feature, mask_condition)
-
-    def on_predict_begin(self, logs=None):
-        '''beginning of model.predict()'''
-        self.set_mask_indices()
-
-    def on_test_batch_begin(self, batch, logs=None):
-        '''each batch of model.evaluate()'''
-        self.set_mask_indices()
-
-    def on_train_batch_begin(self, batch, logs=None):
-        '''each bach of model.fit()'''
-        self.set_mask_indices()
-
-
 class LearningRateCallback(tf.keras.callbacks.Callback):
     '''Noam Learning rate schedule of "Attention is all you need paper"'''
     def __init__(

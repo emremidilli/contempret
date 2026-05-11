@@ -24,7 +24,7 @@ class TransformerEncoder(tf.keras.layers.Layer):
             num_heads=num_heads,
             key_dim=key_dims)
 
-        self.norm1 = tf.keras.layers.LayerNormalization(epsilon=1e-6)
+        self.norm1 = tf.keras.layers.LayerNormalization(epsilon=1e-6, name='encoder_norm_1')
         self.dropout1 = tf.keras.layers.Dropout(dropout_rate)
 
         self.feedforward = tf.keras.Sequential([
@@ -32,7 +32,7 @@ class TransformerEncoder(tf.keras.layers.Layer):
             tf.keras.layers.Dropout(dropout_rate),
             tf.keras.layers.Dense(embed_dim)
         ])
-        self.norm2 = tf.keras.layers.LayerNormalization(epsilon=1e-6)
+        self.norm2 = tf.keras.layers.LayerNormalization(epsilon=1e-6, name='encoder_norm_2')
         self.dropout2 = tf.keras.layers.Dropout(dropout_rate)
 
     def call(self, inputs, training=None):

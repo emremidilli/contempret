@@ -47,7 +47,10 @@ class ProjectionHead(tf.keras.layers.Layer):
             activation='relu',
             use_bias=False)
 
-        self.layer_norm = tf.keras.layers.LayerNormalization()
+        self.layer_norm = tf.keras.layers.LayerNormalization(
+            epsilon=1e-6,
+            dtype=tf.float32,
+            name='projection_head_layer_norm')
 
     def call(self, x):
         '''

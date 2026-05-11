@@ -7,8 +7,7 @@ import tensorflow as tf
 from tsf_model.models import PreTraining
 
 from utils import (
-    LearningRateCallback,
-    MaskingCallback)
+    LearningRateCallback)
 
 def build_model(
         hp,
@@ -161,20 +160,8 @@ def get_callbacks(hp, nr_of_timesteps):
         d_model=embedding_dims,
         scale_factor=SCALE_FACTOR)
 
-    masking_callback = MaskingCallback(
-        nr_of_patches=masked_auto_encoder_patches,
-        masking_rate=MASK_RATE,
-        masks_feature='masks')
-
-    masking_callback_cl = MaskingCallback(
-        nr_of_patches=(masked_auto_encoder_patches - contrastive_learning_patches),
-        masking_rate=MASK_RATE,
-        masks_feature='cl_masks')
-
     my_callbacks = [
-        learning_rate_callback,
-        masking_callback,
-        masking_callback_cl]
+        learning_rate_callback]
 
     return my_callbacks
 

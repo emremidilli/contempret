@@ -6,7 +6,6 @@ from .metrics import (  # noqa: F401
 
 from .callbacks import (  # noqa: F401
     LearningRateCallback,
-    MaskingCallback,
     RamCleaner)
 
 from .metrics import (  # noqa: F401

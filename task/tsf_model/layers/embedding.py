@@ -94,7 +94,9 @@ class Time2Vec(tf.keras.layers.Layer):
 
             self.concatter = tf.keras.layers.Concatenate(axis=2)
 
-            self.layer_norm = tf.keras.layers.LayerNormalization(epsilon=1e-6)
+            self.layer_norm = tf.keras.layers.LayerNormalization(
+                epsilon=1e-6,
+                name='time2vec_layer_norm')
 
     def call(self, inputs, **kwargs):
         '''

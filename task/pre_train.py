@@ -10,7 +10,6 @@ from utils import (
     get_args,
     get_metrics,
     LearningRateCallback,
-    MaskingCallback,
     predict_pre_train,
     RamCleaner,
     read_json,
@@ -144,6 +143,7 @@ if __name__ == '__main__':
             encoder_ffn_units=encoder_ffn_units,
             embedding_dims=embedding_dims,
             projection_head_units=projection_head,
+            mask_rate=mask_rate,
             msk_scalar=mask_scalar,
             nr_of_timesteps=nr_of_timesteps,
             contrastive_learning_patches=contrastive_learning_patches,
@@ -181,17 +181,6 @@ if __name__ == '__main__':
             warmup_steps=warmup_steps,
             scale_factor=scale_factor)
 
-        masking_callback = MaskingCallback(
-            nr_of_patches=masked_auto_encoder_patches,
-            masking_rate=mask_rate,
-            masks_feature='masks')
-
-        masking_callback_cl = MaskingCallback(
-            nr_of_patches=(
-                masked_auto_encoder_patches - contrastive_learning_patches),
-            masking_rate=mask_rate,
-            masks_feature='cl_masks')
-
         ram_cleaner_callback = RamCleaner()
 
         terminate_on_nan_callback = tf.keras.callbacks.TerminateOnNaN()
@@ -206,8 +195,6 @@ if __name__ == '__main__':
             terminate_on_nan_callback,
             ram_cleaner_callback,
             learning_rate_callback,
-            masking_callback,
-            masking_callback_cl,
             early_stopping]
 
         # fit the model
