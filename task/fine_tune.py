@@ -4,7 +4,7 @@ import os
 
 import tensorflow as tf
 
-from tsf_model import (
+from tsf_model.models.fine_tuning import (
     SequencePredictor,
     TimeSeriesClassifier)
 

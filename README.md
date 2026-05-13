@@ -37,7 +37,7 @@ python tune_hyperparameters.py \
 ```bash
 python task/pre_train.py \
   --input_dir="./bin/preprocessed/ETTh1_OT_96" \
-  --output_dir="./bin/models/pt40/" \
+  --output_dir="./bin/models/pt01/" \
   --mask_rate=0.40 \
   --mask_scalar=0.00 \
   --mini_batch_size=64 \
@@ -62,12 +62,13 @@ python task/pre_train.py \
   --cl_margin=0.25 \
   --patch_size=12 \
   --prompt_pool_size=50 \
-  --nr_of_most_similar_prompts=11 \
+  --nr_of_most_similar_prompts=3 \
   --patience=20 \
   --warmup_epochs_early_stopping=100\
   --nr_of_seeds=1\
   --nr_of_epochs=3
 
+  # --nr_of_most_similar_prompts=11 \
   # --encoder_ffn_units=384 \
   # --embedding_dims=256 \
   # --nr_of_seeds=10\
@@ -79,8 +80,8 @@ python task/pre_train.py \
 ```bash
 python task/fine_tune.py \
   --input_dir="./bin/input_representation/ETTh1_ALL_96_96/" \
-  --output_dir="./bin/models/ft40/" \
-  --pre_trained_model_dir="./bin/models/pt40/" \
+  --output_dir="./bin/models/ft01/" \
+  --pre_trained_model_dir="./bin/models/pt01/" \
   --patience="50" --clip_norm="0.1" \
   --learning_rate="0.0001" --warmup_epochs="1" --tune_time2vec="True" \
   --nr_of_seeds="1" \

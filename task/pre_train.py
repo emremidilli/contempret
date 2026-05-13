@@ -4,7 +4,7 @@ import os
 
 import tensorflow as tf
 
-from tsf_model import PreTraining
+from tsf_model.models.pre_training import build_model
 
 from utils import (
     get_args,
@@ -134,7 +134,7 @@ if __name__ == '__main__':
         cl_optimizer = tf.keras.optimizers.Adam()
 
         # define model
-        model = PreTraining(
+        model = build_model(
             nr_of_covariates=nr_of_covariates,
             patch_size=patch_size,
             nr_of_encoder_blocks=nr_of_encoder_blocks,
