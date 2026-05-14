@@ -194,6 +194,8 @@ class MaskedAutoEncoder(tf.keras.Model):
         self.revIn_tre = revIn_tre
         self.revIn_sea = revIn_sea
         self.revIn_res = revIn_res
+        self.nr_of_timesteps = nr_of_timesteps
+        self.nr_of_covariates = nr_of_covariates
 
         self.decoder_tre = LinearHead(
             nr_of_timesteps=nr_of_timesteps,
@@ -234,15 +236,22 @@ class MaskedAutoEncoder(tf.keras.Model):
         config = super().get_config()
 
         config.update({
-            'revIn_tre': tf.keras.utils.serialize_keras_object(self.revIn_tre),
-            'revIn_sea': tf.keras.utils.serialize_keras_object(self.revIn_sea),
-            'revIn_res': tf.keras.utils.serialize_keras_object(self.revIn_res),
-            'representation': tf.keras.utils.serialize_keras_object(self.representation),
+            'revIn_tre': tf.keras.layers.serialize(self.revIn_tre),
+            'revIn_sea': tf.keras.layers.serialize(self.revIn_sea),
+            'revIn_res': tf.keras.layers.serialize(self.revIn_res),
+            'representation': tf.keras.layers.serialize(self.representation),
+            'nr_of_timesteps': self.nr_of_timesteps,
+            'nr_of_covariates': self.nr_of_covariates
         })
         return config
 
     @classmethod
     def from_config(cls, config):
+        config['revIn_tre'] = tf.keras.layers.deserialize(config['revIn_tre'])
+        config['revIn_sea'] = tf.keras.layers.deserialize(config['revIn_sea'])
+        config['revIn_res'] = tf.keras.layers.deserialize(config['revIn_res'])
+        config['representation'] = tf.keras.layers.deserialize(config['representation'])
+
         return cls(**config)
 
 @tf.keras.saving.register_keras_serializable()
@@ -274,13 +283,15 @@ class ContrastiveLearning(tf.keras.Model):
         config = super().get_config()
 
         config.update({
-            'representation': tf.keras.utils.serialize_keras_object(self.representation),
+            'representation': tf.keras.layers.serialize(self.representation),
             'projection_head_units': self.projection_head_units
         })
         return config
 
     @classmethod
     def from_config(cls, config):
+        config['representation'] = tf.keras.layers.deserialize(config['representation'])
+
         return cls(**config)
 
 @tf.keras.saving.register_keras_serializable()
@@ -376,40 +387,40 @@ class PreTraining(tf.keras.Model):
         self.mae_sea_optimizer = mae_sea_optimizer
         self.cl_optimizer = cl_optimizer
 
-    def get_compile_config(self):
-        cfg = super().get_compile_config()
-        cfg.update({
-            'mae_comp_optimizer': self.mae_comp_optimizer,
-            'mae_tre_optimizer': self.mae_tre_optimizer,
-            'mae_sea_optimizer': self.mae_sea_optimizer,
-            'cl_optimizer': self.cl_optimizer
-        })
+    # def get_compile_config(self):
+    #     cfg = super().get_compile_config()
+    #     cfg.update({
+    #         'mae_comp_optimizer': self.mae_comp_optimizer,
+    #         'mae_tre_optimizer': self.mae_tre_optimizer,
+    #         'mae_sea_optimizer': self.mae_sea_optimizer,
+    #         'cl_optimizer': self.cl_optimizer
+    #     })
 
-        return cfg
+    #     return cfg
 
-    def compile_from_config(self, config):
-        mae_comp_optimizer = config['mae_comp_optimizer']
-        mae_tre_optimizer = config['mae_tre_optimizer']
-        mae_sea_optimizer = config['mae_sea_optimizer']
-        cl_optimizer = config['cl_optimizer']
+    # def compile_from_config(self, config):
+    #     mae_comp_optimizer = config['mae_comp_optimizer']
+    #     mae_tre_optimizer = config['mae_tre_optimizer']
+    #     mae_sea_optimizer = config['mae_sea_optimizer']
+    #     cl_optimizer = config['cl_optimizer']
 
-        self.compile(
-            mae_comp_optimizer=mae_comp_optimizer,
-            mae_tre_optimizer=mae_tre_optimizer,
-            mae_sea_optimizer=mae_sea_optimizer,
-            cl_optimizer=cl_optimizer)
+    #     self.compile(
+    #         mae_comp_optimizer=mae_comp_optimizer,
+    #         mae_tre_optimizer=mae_tre_optimizer,
+    #         mae_sea_optimizer=mae_sea_optimizer,
+    #         cl_optimizer=cl_optimizer)
 
     def get_config(self):
         config = super().get_config()
 
         config.update({
-            'revIn_tre': tf.keras.utils.serialize_keras_object(self.revIn_tre),
-            'revIn_sea': tf.keras.utils.serialize_keras_object(self.revIn_sea),
-            'revIn_res': tf.keras.utils.serialize_keras_object(self.revIn_res),
-            'patch_tokenizer': tf.keras.utils.serialize_keras_object(self.patch_tokenizer),
-            'representation': tf.keras.utils.serialize_keras_object(self.representation),
-            'masked_autoencoder': tf.keras.utils.serialize_keras_object(self.masked_autoencoder),
-            'contrastive_learning': tf.keras.utils.serialize_keras_object(self.contrastive_learning),
+            'revIn_tre': tf.keras.layers.serialize(self.revIn_tre),
+            'revIn_sea': tf.keras.layers.serialize(self.revIn_sea),
+            'revIn_res': tf.keras.layers.serialize(self.revIn_res),
+            'patch_tokenizer': tf.keras.layers.serialize(self.patch_tokenizer),
+            'representation': tf.keras.layers.serialize(self.representation),
+            'masked_autoencoder': tf.keras.layers.serialize(self.masked_autoencoder),
+            'contrastive_learning': tf.keras.layers.serialize(self.contrastive_learning),
             'nr_of_patches': self.nr_of_patches,
             'mask_rate': self.mask_rate,
             'msk_scalar': self.msk_scalar,
@@ -428,6 +439,14 @@ class PreTraining(tf.keras.Model):
 
     @classmethod
     def from_config(cls, config):
+        config['revIn_tre'] = tf.keras.layers.deserialize(config['revIn_tre'])
+        config['revIn_sea'] = tf.keras.layers.deserialize(config['revIn_sea'])
+        config['revIn_res'] = tf.keras.layers.deserialize(config['revIn_res'])
+        config['patch_tokenizer'] = tf.keras.layers.deserialize(config['patch_tokenizer'])
+        config['representation'] = tf.keras.layers.deserialize(config['representation'])
+        config['masked_autoencoder'] = tf.keras.layers.deserialize(config['masked_autoencoder'])
+        config['contrastive_learning'] = tf.keras.layers.deserialize(config['contrastive_learning'])
+
         return cls(**config)
 
     def generate_mask(self, nr_of_timesteps: int):

@@ -26,6 +26,9 @@ class PatchMasker(tf.keras.layers.Layer):
         x_tre, x_sea, x_res, masks = inputs
 
         nr_of_timesteps = x_tre.shape[1]
+        if masks is None:
+            return (x_tre, x_sea, x_res)
+
         mask_condition = tf.expand_dims(masks, axis=-1)
 
         y_tre = tf.add(tf.zeros_like(x_tre), self.msk_scalar)

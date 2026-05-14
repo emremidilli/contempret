@@ -37,7 +37,7 @@ python tune_hyperparameters.py \
 ```bash
 python task/pre_train.py \
   --input_dir="./bin/preprocessed/ETTh1_OT_96" \
-  --output_dir="./bin/models/pt01/" \
+  --output_dir="./bin/models/pt04/" \
   --mask_rate=0.40 \
   --mask_scalar=0.00 \
   --mini_batch_size=64 \
@@ -80,8 +80,8 @@ python task/pre_train.py \
 ```bash
 python task/fine_tune.py \
   --input_dir="./bin/input_representation/ETTh1_ALL_96_96/" \
-  --output_dir="./bin/models/ft01/" \
-  --pre_trained_model_dir="./bin/models/pt01/" \
+  --output_dir="./bin/models/ft04/" \
+  --pre_trained_model_dir="./bin/models/pt04/" \
   --patience="50" --clip_norm="0.1" \
   --learning_rate="0.0001" --warmup_epochs="1" --tune_time2vec="True" \
   --nr_of_seeds="1" \
