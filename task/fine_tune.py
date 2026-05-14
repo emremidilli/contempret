@@ -18,7 +18,9 @@ from utils import (
 
 
 def test_if_query_weigts_are_same(model_pt:tf.keras.Model, model_ft: tf.keras.Model):
-    for layer_pt, layer_ft in zip(model_pt.encoder_representation.encoders_temporal.layers, model_ft.encoder_representation.encoders_temporal.layers):
+    for layer_pt, layer_ft in zip(
+        model_pt.representation.encoder_representation.encoders_temporal.layers,
+        model_ft.representation.encoder_representation.encoders_temporal.layers):
         if '_input' in layer_pt.name: # ignore input layer
             continue
 
@@ -116,18 +118,12 @@ if __name__ == '__main__':
             clipnorm=clip_norm)
 
         model = univariate_model_type(
-            patch_tokenizer=pre_trained_model.patch_tokenizer,
-            encoder_representation=pre_trained_model.encoder_representation,
-            nr_of_timesteps=ds_train.element_spec[1].shape[1],
-            trend_prompt=trend_prompt,
-            seasonality_prompt=seasonality_prompt,
-            residual_prompt=residual_prompt,
             revIn_tre=pre_trained_model.revIn_tre,
             revIn_sea=pre_trained_model.revIn_sea,
             revIn_res=pre_trained_model.revIn_res,
-            tre_embedding=pre_trained_model.tre_embedding,
-            sea_embedding=pre_trained_model.sea_embedding,
-            res_embedding=pre_trained_model.res_embedding,
+            patch_tokenizer=pre_trained_model.patch_tokenizer,
+            representation=pre_trained_model.representation,
+            nr_of_timesteps=ds_train.element_spec[1].shape[1],
             tune_time2vec=tune_time2vec)
 
         for x, y in ds_train.take(1):
@@ -137,20 +133,20 @@ if __name__ == '__main__':
         _ = model(dummy_input, training=False)
 
         # model.trainable = False
-        model.tre_embedding.trainable = False
-        model.sea_embedding.trainable = False
-        model.res_embedding.trainable = False
+        # model.tre_embedding.trainable = False
+        # model.sea_embedding.trainable = False
+        # model.res_embedding.trainable = False
 
-        if model.trend_prompt is not None:
-            model.trend_prompt.trainable = True
+        # if model.trend_prompt is not None:
+        #     model.trend_prompt.trainable = True
 
-        if model.seasonality_prompt is not None:
-            model.seasonality_prompt.trainable = True
+        # if model.seasonality_prompt is not None:
+        #     model.seasonality_prompt.trainable = True
 
-        if model.residual_prompt is not None:
-            model.residual_prompt.trainable = True
+        # if model.residual_prompt is not None:
+        #     model.residual_prompt.trainable = True
 
-        model.encoder_representation.trainable = False
+        model.representation.trainable = False
         # for enc in model.encoder_representation.encoders_temporal:
         #     enc.attention.trainable = False
         #     enc.attention._query_dense.trainable = False
