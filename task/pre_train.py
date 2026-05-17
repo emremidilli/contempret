@@ -4,14 +4,15 @@ import os
 
 import tensorflow as tf
 
-from tsf_model.models.pre_training import build_model
+from tsf_model.models.pre_training import (
+    build_model,
+    compile_model,
+    get_callbacks)
 
 from utils import (
     get_args,
     get_metrics,
-    LearningRateCallback,
     predict_pre_train,
-    RamCleaner,
     read_json,
     save_json)
 
@@ -61,7 +62,7 @@ if __name__ == '__main__':
     nr_of_seeds = args.nr_of_seeds
 
     # configure mixed precision policy
-    tf.keras.mixed_precision.set_global_policy("mixed_float16")
+    tf.keras.mixed_precision.set_global_policy("float32")
 
     if embedding_dims % nr_of_heads != 0:
         raise ValueError(
@@ -109,6 +110,10 @@ if __name__ == '__main__':
     ds_val = ds_val.batch(mini_batch_size).prefetch(tf.data.AUTOTUNE)
     ds_test = ds_test.batch(mini_batch_size).prefetch(tf.data.AUTOTUNE)
 
+    # define paths
+    os.makedirs(output_dir, exist_ok=True)
+    checkpoint_path = os.path.join(output_dir, 'checkpoint.keras')
+
     # define patchs/covariates/
     use_time2vec = (ds_train.element_spec[-1].shape[1] > 0)
     nr_of_timesteps = ds_train.element_spec[0].shape[1]
@@ -118,20 +123,10 @@ if __name__ == '__main__':
     contrastive_learning_patches = \
         int(contrastive_learning_patches / patch_size)
 
-    masked_auto_encoder_patches = int(nr_of_timesteps / patch_size)
-
-    best_model_weights = None
     best_loss = np.inf
     for seed in range(nr_of_seeds):
         print(f'Trial: {seed + 1} / {nr_of_seeds}')
         tf.keras.utils.set_random_seed(seed)
-
-        # initialize optimizers
-        mae_comp_optimizer = tf.keras.optimizers.Adam()
-        mae_tre_optimizer = tf.keras.optimizers.Adam()
-        mae_sea_optimizer = tf.keras.optimizers.Adam()
-
-        cl_optimizer = tf.keras.optimizers.Adam()
 
         # define model
         model = build_model(
@@ -169,33 +164,14 @@ if __name__ == '__main__':
             custom_prompt_keys_seasonality=custom_prompt_keys_seasonality,
             custom_prompt_keys_residual=custom_prompt_keys_residual)
 
-        model.compile(
-            mae_comp_optimizer=mae_comp_optimizer,
-            mae_tre_optimizer=mae_tre_optimizer,
-            mae_sea_optimizer=mae_sea_optimizer,
-            cl_optimizer=cl_optimizer)
+        model = compile_model(model=model)
 
-        # define the callbacks
-        learning_rate_callback = LearningRateCallback(
-            d_model=embedding_dims,
+        callbacks = get_callbacks(
+            embedding_dims=embedding_dims,
             warmup_steps=warmup_steps,
-            scale_factor=scale_factor)
-
-        ram_cleaner_callback = RamCleaner()
-
-        terminate_on_nan_callback = tf.keras.callbacks.TerminateOnNaN()
-
-        early_stopping = tf.keras.callbacks.EarlyStopping(
-            monitor='val_mae_composed',
+            scale_factor=scale_factor,
             patience=patience,
-            start_from_epoch=warmup_epochs_early_stopping,
-            restore_best_weights=True)
-
-        callbacks = [
-            terminate_on_nan_callback,
-            ram_cleaner_callback,
-            learning_rate_callback,
-            early_stopping]
+            warmup_epochs_early_stopping=warmup_epochs_early_stopping)
 
         # fit the model
         history = model.fit(
@@ -210,11 +186,19 @@ if __name__ == '__main__':
 
         if val_loss < best_loss:
             best_loss = val_loss
-             # store weights
-            best_model_weights = model.get_weights()
+            model.save(checkpoint_path)
 
     # Load the best initialization
-    model.set_weights(best_model_weights)
+    model = tf.keras.models.load_model(checkpoint_path)
+    model = compile_model(model=model)
+
+    # define callbacks
+    callbacks = get_callbacks(
+        embedding_dims=embedding_dims,
+        warmup_steps=warmup_steps,
+        scale_factor=scale_factor,
+        patience=patience,
+        warmup_epochs_early_stopping=warmup_epochs_early_stopping)
 
     # fit the model
     history = model.fit(
@@ -245,8 +229,6 @@ if __name__ == '__main__':
         history=history)
 
     # save outputs
-    os.makedirs(output_dir, exist_ok=True)
-
     save_json(metrics, output_dir, 'metrics.json')
     save_json(vars(args), output_dir, 'params.json')
     save_json(history.history, output_dir, 'history.json')

@@ -4,16 +4,17 @@ import keras_tuner as kt
 
 import tensorflow as tf
 
-from tsf_model.models import PreTraining
+from tsf_model.models.pre_training import build_model
 
 from utils import (
     LearningRateCallback)
 
-def build_model(
-        hp,
-        nr_of_timesteps,
-        nr_of_covariates,
-        use_time2vec):
+
+def build_model_to_tune(
+    hp: kt.HyperParameters,
+    nr_of_timesteps: int,
+    nr_of_covariates: int,
+    use_time2vec: bool):
     '''
     function that builds model for tuning.
     during pre-training, all self-supervised tasks are forced to be trained.
@@ -47,8 +48,8 @@ def build_model(
         hp.Choice('embedding_dims', values=[64, 128, 256, 512])
     nr_of_heads = \
         hp.Choice('nr_of_heads', values=[2, 4, 8, 16])
-    projection_head = \
-        hp.Choice('projection_head', values=[8, 16, 32, 64])
+    projection_head_units = \
+        hp.Choice('projection_head_units', values=[8, 16, 32, 64])
     prompt_pool_size = \
         hp.Choice('prompt_pool_size', values=[10, 20, 30, 40, 50])
 
@@ -101,7 +102,8 @@ def build_model(
 
     masked_auto_encoder_patches = int(nr_of_timesteps / patch_size)
 
-    model = PreTraining(
+
+    model = build_model(
         nr_of_covariates=nr_of_covariates,
         patch_size=patch_size,
         nr_of_encoder_blocks=nr_of_encoder_blocks,
@@ -109,7 +111,8 @@ def build_model(
         dropout_rate=dropout_rate,
         encoder_ffn_units=encoder_ffn_units,
         embedding_dims=embedding_dims,
-        projection_head_units=projection_head,
+        projection_head_units=projection_head_units,
+        mask_rate=MASK_RATE,
         msk_scalar=MASK_SCALAR,
         nr_of_timesteps=nr_of_timesteps,
         contrastive_learning_patches=contrastive_learning_patches,
@@ -144,7 +147,7 @@ def build_model(
     return model
 
 
-def get_callbacks(hp, nr_of_timesteps):
+def get_callbacks(hp):
     '''
     returns the callbacks for hyperparameter tuning.
     '''
@@ -152,9 +155,6 @@ def get_callbacks(hp, nr_of_timesteps):
     SCALE_FACTOR = 1.0
 
     embedding_dims = hp.get('embedding_dims')
-    patch_size = hp.get('patch_size')
-    contrastive_learning_patches = int(nr_of_timesteps * MASK_RATE / patch_size)
-    masked_auto_encoder_patches = int(nr_of_timesteps / patch_size)
 
     learning_rate_callback = LearningRateCallback(
         d_model=embedding_dims,
@@ -170,13 +170,12 @@ class Tuner(kt.Hyperband):
     '''
     Hyperband based hyper-parameter tuning class
     '''
-    def __init__(self, *args, nr_of_timesteps=None, **kwargs):
+    def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.nr_of_timesteps = nr_of_timesteps
 
     def run_trial(self, trial, *args, **kwargs):
         hp = trial.hyperparameters
-        kwargs['callbacks'] = get_callbacks(hp, self.nr_of_timesteps)
+        kwargs['callbacks'] = get_callbacks(hp)
         return super().run_trial(trial, *args, **kwargs)
 
     def on_trial_end(self, trial):

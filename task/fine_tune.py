@@ -5,6 +5,9 @@ import os
 import tensorflow as tf
 
 from tsf_model.models.fine_tuning import (
+    compile_model,
+    freeze_model,
+    get_callbacks,
     SequencePredictor,
     TimeSeriesClassifier)
 
@@ -15,25 +18,6 @@ from utils import (
     RamCleaner,
     save_json,
     save_npy)
-
-
-def test_if_query_weigts_are_same(model_pt:tf.keras.Model, model_ft: tf.keras.Model):
-    for layer_pt, layer_ft in zip(
-        model_pt.representation.encoder_representation.encoders_temporal.layers,
-        model_ft.representation.encoder_representation.encoders_temporal.layers):
-        if '_input' in layer_pt.name: # ignore input layer
-            continue
-
-        if hasattr(layer_pt.attention, '_query_dense') and hasattr(layer_ft.attention, '_query_dense'):
-
-            weights_pt = layer_pt.attention._query_dense.weights[0].numpy()
-            weights_ft = layer_ft.attention._query_dense.weights[0].numpy()
-
-            # if (weights_pt == weights_ft).all():
-            if np.allclose(weights_pt, weights_ft, atol=1e-6):
-                return True
-            else:
-                return False
 
 
 if __name__ == '__main__':
@@ -56,7 +40,7 @@ if __name__ == '__main__':
     nr_of_seeds = args.nr_of_seeds
 
     # configure mixed precision policy
-    tf.keras.mixed_precision.set_global_policy("mixed_float16")
+    tf.keras.mixed_precision.set_global_policy("float32")
 
     # get inputs
     ds_train = tf.data.Dataset.load(
@@ -71,6 +55,10 @@ if __name__ == '__main__':
     pre_trained_model = tf.keras.models.load_model(
         os.path.join(pre_trained_model_dir, 'model.keras'),
         compile=False)
+
+    # prepare paths
+    os.makedirs(output_dir, exist_ok=True)
+    checkpoint_path = os.path.join(output_dir, 'checkpoint.keras')
 
     # batch datasets
     ds_train = ds_train.batch(mini_batch_size).prefetch(tf.data.AUTOTUNE)
@@ -106,16 +94,14 @@ if __name__ == '__main__':
             ]
         monitor = 'val_loss'
 
-    best_model_weights = None
+    for x, y in ds_train.take(1):
+        dummy_input = x
+        break
+
     best_loss = np.inf
     for seed in range(nr_of_seeds):
         print(f'Trial: {seed + 1} / {nr_of_seeds}')
         tf.keras.utils.set_random_seed(seed)
-
-        # define optimizer
-        optimizer = tf.keras.optimizers.Adam(
-            learning_rate=learning_rate,
-            clipnorm=clip_norm)
 
         model = univariate_model_type(
             revIn_tre=pre_trained_model.revIn_tre,
@@ -126,48 +112,16 @@ if __name__ == '__main__':
             nr_of_timesteps=ds_train.element_spec[1].shape[1],
             tune_time2vec=tune_time2vec)
 
-        for x, y in ds_train.take(1):
-            dummy_input = x
-            break
-
         _ = model(dummy_input, training=False)
 
-        # model.trainable = False
-        # model.tre_embedding.trainable = False
-        # model.sea_embedding.trainable = False
-        # model.res_embedding.trainable = False
+        model = freeze_model(model=model, tune_time2vec=tune_time2vec)
 
-        # if model.trend_prompt is not None:
-        #     model.trend_prompt.trainable = True
-
-        # if model.seasonality_prompt is not None:
-        #     model.seasonality_prompt.trainable = True
-
-        # if model.residual_prompt is not None:
-        #     model.residual_prompt.trainable = True
-
-        model.representation.trainable = False
-        # for enc in model.encoder_representation.encoders_temporal:
-        #     enc.attention.trainable = False
-        #     enc.attention._query_dense.trainable = False
-        #     enc.attention._key_dense.trainable = False
-        #     enc.attention._value_dense.trainable = False
-        #     enc.attention._output_dense.trainable = False
-
-        #     enc.feedforward.trainable = False
-
-        # if model.encoder_representation.time2vec is not None:
-        #     model.encoder_representation.time2vec.trainable = tune_time2vec
-
-        print("Encoder Rep ID Match (before compile):", test_if_query_weigts_are_same(pre_trained_model, model))
-
-        model.compile(
-            run_eagerly=False,
-            optimizer=optimizer,
-            loss=loss_fn,
-            metrics=metrics_fn)
-
-        print("Encoder Rep ID Match (before fit):", test_if_query_weigts_are_same(pre_trained_model, model))
+        compile_model(
+            model=model,
+            learning_rate=learning_rate,
+            clip_norm=clip_norm,
+            loss_fn=loss_fn,
+            metrics_fn=metrics_fn)
 
         # fit model (briefly)
         history = model.fit(
@@ -177,35 +131,31 @@ if __name__ == '__main__':
             validation_data=ds_val,
             shuffle=False)
 
-        print("Encoder Rep ID Match (after fit):", test_if_query_weigts_are_same(pre_trained_model, model))
-
         val_loss = history.history['val_loss'][-1]
 
         if val_loss < best_loss:
             best_loss = val_loss
-             # store weights
-            best_model_weights = model.get_weights()
+            model.save(checkpoint_path)
 
     # Load the best initialization
-    model.set_weights(best_model_weights)
+    model = tf.keras.models.load_model(checkpoint_path, compile=False)
 
-    print("Encoder Rep ID Match (after set_weights):", test_if_query_weigts_are_same(pre_trained_model, model))
+    _ = model(dummy_input, training=False)
+
+    model = freeze_model(model=model, tune_time2vec=tune_time2vec)
+
+    compile_model(
+        model=model,
+        learning_rate=learning_rate,
+        clip_norm=clip_norm,
+        loss_fn=loss_fn,
+        metrics_fn=metrics_fn)
 
     # define callbacks
-    terminate_on_nan_callback = tf.keras.callbacks.TerminateOnNaN()
-
-    ram_cleaner_callback = RamCleaner()
-
-    early_stopping = tf.keras.callbacks.EarlyStopping(
+    callbacks = get_callbacks(
         monitor=monitor,
         patience=patience,
-        start_from_epoch=warmup_epochs_early_stopping,
-        restore_best_weights=True)
-
-    callbacks = [
-        terminate_on_nan_callback,
-        ram_cleaner_callback,
-        early_stopping]
+        warmup_epochs_early_stopping=warmup_epochs_early_stopping)
 
     # fit the best initialization
     history = model.fit(
@@ -215,8 +165,6 @@ if __name__ == '__main__':
         validation_data=ds_val,
         shuffle=False,
         callbacks=callbacks)
-
-    print("Encoder Rep ID Match (after final fit):", test_if_query_weigts_are_same(pre_trained_model, model))
 
     # predict
     actual_train, pred_train = predict_fine_tune(
@@ -229,8 +177,6 @@ if __name__ == '__main__':
         model=model,
         ds=ds_test)
 
-    print("Encoder Rep ID Match (after inferences):", test_if_query_weigts_are_same(pre_trained_model, model))
-
     # calculate metrics
     metrics = get_metrics(
         model=model,
@@ -240,19 +186,7 @@ if __name__ == '__main__':
         history=history)
 
     # save outputs
-    os.makedirs(output_dir, exist_ok=True)
-
     model.save(os.path.join(output_dir, 'model.keras'))
-
-    print("Encoder Rep ID Match (before reload):", test_if_query_weigts_are_same(pre_trained_model, model))
-
-    model_new = tf.keras.models.load_model(
-        os.path.join(output_dir, 'model.keras'),
-        compile=False)
-
-    print("Encoder Rep ID Match (after reload):", test_if_query_weigts_are_same(pre_trained_model, model_new))
-
-    print("Encoder Rep ID Match (before vs after):", test_if_query_weigts_are_same(model, model_new))
 
     save_json(metrics, output_dir, 'metrics.json')
     save_json(vars(args), output_dir, 'params.json')

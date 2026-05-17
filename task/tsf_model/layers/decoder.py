@@ -4,8 +4,15 @@ import tensorflow as tf
 
 @tf.keras.saving.register_keras_serializable()
 class LinearHead(tf.keras.layers.Layer):
-    '''Decoder for masked auto-encoder.'''
+    '''
+    Decoder for masked auto-encoder.
+    This layer works with float32 data.
+    If the input data has a different dtype,
+        it will be cast to float32 before processing.
+    The output will also be in float32.
+    '''
     def __init__(self, nr_of_timesteps, nr_of_covariates, **kwargs):
+        kwargs.setdefault("dtype", "float32")
         super().__init__(**kwargs)
 
         self.flatten = tf.keras.layers.Flatten()
@@ -36,8 +43,15 @@ class LinearHead(tf.keras.layers.Layer):
 
 @tf.keras.saving.register_keras_serializable()
 class ProjectionHead(tf.keras.layers.Layer):
-    '''Projection head for contrastive learning task.'''
+    '''
+    Projection head for contrastive learning task.
+    This layer works with float32 data.
+    If the input data has a different dtype,
+        it will be cast to float32 before processing.
+    The output will also be in float32.
+    '''
     def __init__(self, iFfnUnits, **kwargs):
+        kwargs.setdefault("dtype", "float32")
         super().__init__(**kwargs)
 
         self.flatten = tf.keras.layers.Flatten()
@@ -49,7 +63,6 @@ class ProjectionHead(tf.keras.layers.Layer):
 
         self.layer_norm = tf.keras.layers.LayerNormalization(
             epsilon=1e-6,
-            dtype=tf.float32,
             name='projection_head_layer_norm')
 
     def call(self, x):

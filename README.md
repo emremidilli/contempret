@@ -24,9 +24,9 @@ python pre_process_pre_training.py \
 
 #### Hyperparameter tuning
 ```bash
-python tune_hyperparameters.py \
+python task/tune_hyperparameters.py \
   --input_dir="./bin/preprocessed/ETTh1_OT_96" \
-  --output_dir="./bin/hp-tuning/ETTh1_OT_96" \
+  --output_dir="./bin/hp-tuning/pt04" \
   --mini_batch_size=64 \
   --max_epochs=10 \
   --executions_per_trial=2 \
@@ -37,23 +37,23 @@ python tune_hyperparameters.py \
 ```bash
 python task/pre_train.py \
   --input_dir="./bin/preprocessed/ETTh1_OT_96" \
-  --output_dir="./bin/models/pt04/" \
+  --output_dir="./bin/models/pt10/" \
   --mask_rate=0.40 \
   --mask_scalar=0.00 \
-  --mini_batch_size=64 \
+  --mini_batch_size=128 \
   --clip_norm=0.1 \
-  --l1_trend=0.000020347 \
-  --l2_trend=0.00041159 \
-  --l1_seasonality=0.000085324 \
+  --l1_trend=0.000631 \
+  --l2_trend=1.5435e-06 \
+  --l1_seasonality=0.00081708 \
   --l2_seasonality=0.000090101 \
-  --l1_residual=0.000065279 \
-  --l2_residual=0.0050711 \
-  --nr_of_encoder_blocks=2 \
+  --l1_residual=0.0068574 \
+  --l2_residual=0.0017232 \
+  --nr_of_encoder_blocks=8 \
   --nr_of_heads=2 \
   --dropout_rate=0.3 \
-  --encoder_ffn_units=64 \
-  --embedding_dims=32 \
-  --projection_head=16 \
+  --encoder_ffn_units=256 \
+  --embedding_dims=64 \
+  --projection_head=32 \
   --warmup_steps=4000 \
   --scale_factor=1.0 \
   --mae_threshold_comp=0.25 \
@@ -64,32 +64,42 @@ python task/pre_train.py \
   --prompt_pool_size=50 \
   --nr_of_most_similar_prompts=3 \
   --patience=20 \
-  --warmup_epochs_early_stopping=100\
-  --nr_of_seeds=1\
-  --nr_of_epochs=3
-
-  # --nr_of_most_similar_prompts=11 \
-  # --encoder_ffn_units=384 \
-  # --embedding_dims=256 \
-  # --nr_of_seeds=10\
-  # --nr_of_epochs=1000
+  --warmup_epochs_early_stopping=100 \
+  --nr_of_seeds=1 \
+  --nr_of_epochs=2
 ```
+`
+  # the most recent one
+4                 |8                 |nr_of_encoder_blocks
+0.3               |0.3               |dropout_rate
+384               |256               |encoder_ffn_units
+64                |64                |embedding_dims
+2                 |2                 |nr_of_heads
+32                |32                |projection_head_units
+40                |50                |prompt_pool_size
+8                 |12                |patch_size
+4                 |3                 |nr_of_most_similar_prompts
+0.00012635        |0.000631          |l1_trend
+4.2692e-05        |1.5435e-06        |l2_trend
+0.00014249        |0.00081708        |l1_seasonality
+0.00019867        |1.0746e-05        |l2_seasonality
+0.00011195        |0.0068574         |l1_residual
+0.0090439         |0.0017232         |l2_residual
+`
 
 #### Fine-tuning for full-shot
 
 ```bash
 python task/fine_tune.py \
   --input_dir="./bin/input_representation/ETTh1_ALL_96_96/" \
-  --output_dir="./bin/models/ft04/" \
-  --pre_trained_model_dir="./bin/models/pt04/" \
-  --patience="50" --clip_norm="0.1" \
-  --learning_rate="0.0001" --warmup_epochs="1" --tune_time2vec="True" \
-  --nr_of_seeds="1" \
-  --nr_of_epochs="3" \
+  --output_dir="./bin/models/ft10/" \
+  --pre_trained_model_dir="./bin/models/pt10/" \
+  --patience=50 \
+  --clip_norm=0.1 \
+  --learning_rate=0.0001 \
+  --warmup_epochs=1 \
+  --tune_time2vec="True" \
+  --nr_of_seeds=1 \
+  --nr_of_epochs=10 \
   --mini_batch_size=128
-
-  #--mini_batch_size=128
-  # --nr_of_seeds="10" \
-  # --nr_of_epochs="10000"
 ```
-

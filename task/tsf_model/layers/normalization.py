@@ -16,11 +16,17 @@ class ReversibleInstanceNormalization(tf.keras.layers.Layer):
             the same shape with the number of covariates
             in multivariate forecasting model.
 
+        This works only with float32 data.
+        If the input data has a different dtype,
+            it will be cast to float32 before processing.
+        The output will also be in float32.
+
         args:
             nr_of_covariates (int): number of covaraites
             epsilon (float): a constant that helps to escape zero division
                 errors.
         '''
+        kwargs.setdefault("dtype", "float32")
         super().__init__(**kwargs)
 
         self.nr_of_covariates = nr_of_covariates
@@ -30,13 +36,13 @@ class ReversibleInstanceNormalization(tf.keras.layers.Layer):
             shape=(nr_of_covariates, ),
             initializer='ones',
             trainable=True,
-            dtype=self.dtype_policy.compute_dtype,
+            dtype=tf.float32,
             name='gamma')
         self.beta = self.add_weight(
             shape=(nr_of_covariates, ),
             initializer='zeros',
             trainable=True,
-            dtype=self.dtype_policy.compute_dtype,
+            dtype=tf.float32,
             name='beta')
 
     def call(self, inputs):
@@ -49,8 +55,8 @@ class ReversibleInstanceNormalization(tf.keras.layers.Layer):
         '''
         x = inputs
 
-        # Cast epsilon to input dtype
-        epsilon = tf.cast(self.epsilon, x.dtype)
+        # Cast input to input to float32 if it is not already in float32
+        x = tf.cast(x, tf.float32)
 
         mu = tf.math.reduce_mean(x, axis=1)
         var = tf.math.reduce_variance(x, axis=1)
@@ -60,10 +66,7 @@ class ReversibleInstanceNormalization(tf.keras.layers.Layer):
         z = tf.subtract(x, tf.expand_dims(mu, axis=1))
         r = tf.divide(z, tf.expand_dims(sigma, axis=1))
 
-        gamma = tf.cast(self.gamma, x.dtype)
-        beta = tf.cast(self.beta, x.dtype)
-
-        y = tf.math.multiply(r, gamma) + beta
+        y = tf.math.multiply(r, self.gamma) + self.beta
 
         return y
 
@@ -80,22 +83,18 @@ class ReversibleInstanceNormalization(tf.keras.layers.Layer):
         '''
         x, y_pred = inputs
 
-        # Cast epsilon to input dtype
-        target_dtype = y_pred.dtype
-        x = tf.cast(x, target_dtype)
-        epsilon = tf.cast(self.epsilon, target_dtype)
+        # Cast input to input to float32 if it is not already in float32
+        x = tf.cast(x, tf.float32)
+        y_pred = tf.cast(y_pred, tf.float32)
 
         mu = tf.math.reduce_mean(x, axis=1)
         var = tf.math.reduce_variance(x, axis=1)
         var_adj = tf.math.add(var, self.epsilon)
         sigma = tf.math.sqrt(var_adj)
 
-        gamma = tf.cast(self.gamma, target_dtype)
-        beta = tf.cast(self.beta, target_dtype)
+        k = tf.math.subtract(y_pred, self.beta)
 
-        k = tf.math.subtract(y_pred, beta)
-
-        m = tf.math.divide(k, gamma)
+        m = tf.math.divide(k, self.gamma)
 
         n = tf.math.multiply(tf.expand_dims(sigma, axis=1), m)
 

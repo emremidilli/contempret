@@ -7,6 +7,10 @@ from tsf_model.layers import Representation, \
     ReversibleInstanceNormalization, PatchTokenizer, \
     SoftPrompts
 
+from utils import (
+    LearningRateCallback,
+    RamCleaner)
+
 
 @tf.keras.saving.register_keras_serializable()
 class RepresentationLearning(tf.keras.Model):
@@ -176,6 +180,7 @@ class RepresentationLearning(tf.keras.Model):
     def from_config(cls, config):
         return cls(**config)
 
+
 @tf.keras.saving.register_keras_serializable()
 class MaskedAutoEncoder(tf.keras.Model):
     '''Masked auto-encoder for pre-training task.'''
@@ -254,6 +259,7 @@ class MaskedAutoEncoder(tf.keras.Model):
 
         return cls(**config)
 
+
 @tf.keras.saving.register_keras_serializable()
 class ContrastiveLearning(tf.keras.Model):
     '''Contrastive learning head for pre-training task.'''
@@ -293,6 +299,7 @@ class ContrastiveLearning(tf.keras.Model):
         config['representation'] = tf.keras.layers.deserialize(config['representation'])
 
         return cls(**config)
+
 
 @tf.keras.saving.register_keras_serializable()
 class PreTraining(tf.keras.Model):
@@ -386,29 +393,6 @@ class PreTraining(tf.keras.Model):
         self.mae_tre_optimizer = mae_tre_optimizer
         self.mae_sea_optimizer = mae_sea_optimizer
         self.cl_optimizer = cl_optimizer
-
-    # def get_compile_config(self):
-    #     cfg = super().get_compile_config()
-    #     cfg.update({
-    #         'mae_comp_optimizer': self.mae_comp_optimizer,
-    #         'mae_tre_optimizer': self.mae_tre_optimizer,
-    #         'mae_sea_optimizer': self.mae_sea_optimizer,
-    #         'cl_optimizer': self.cl_optimizer
-    #     })
-
-    #     return cfg
-
-    # def compile_from_config(self, config):
-    #     mae_comp_optimizer = config['mae_comp_optimizer']
-    #     mae_tre_optimizer = config['mae_tre_optimizer']
-    #     mae_sea_optimizer = config['mae_sea_optimizer']
-    #     cl_optimizer = config['cl_optimizer']
-
-    #     self.compile(
-    #         mae_comp_optimizer=mae_comp_optimizer,
-    #         mae_tre_optimizer=mae_tre_optimizer,
-    #         mae_sea_optimizer=mae_sea_optimizer,
-    #         cl_optimizer=cl_optimizer)
 
     def get_config(self):
         config = super().get_config()
@@ -757,19 +741,16 @@ class PreTraining(tf.keras.Model):
                     mask=mask,
                     loss_fn=tf.keras.losses.mean_squared_error)
 
-                mae_trainable_vars = self.revIn_tre.trainable_variables + \
-                    self.revIn_sea.trainable_variables + \
-                    self.revIn_res.trainable_variables + \
-                    self.masked_autoencoder.trainable_variables
-
             # compute gradients
-            mae_graidents = tape.gradient(
-                loss_mae_comp,
-                mae_trainable_vars)
+            mae_trainable_vars = self.revIn_tre.trainable_variables + \
+                self.revIn_sea.trainable_variables + \
+                self.revIn_res.trainable_variables + \
+                self.masked_autoencoder.trainable_variables
+
+            mae_gradients = tape.gradient(loss_mae_comp, mae_trainable_vars)
 
             # update weights
-            self.mae_comp_optimizer.apply_gradients(
-                zip(mae_graidents, mae_trainable_vars))
+            self.mae_comp_optimizer.apply_gradients(zip(mae_gradients, mae_trainable_vars))
 
             # log losses
             self.loss_tracker_mae_comp.update_state(loss_mae_comp)
@@ -802,17 +783,13 @@ class PreTraining(tf.keras.Model):
                     mask=mask,
                     loss_fn=tf.keras.losses.mean_squared_error)
 
-                mae_trainable_vars = self.revIn_tre.trainable_variables + \
-                    self.masked_autoencoder.trainable_variables
-
             # compute gradients
-            mae_graidents = tape.gradient(
-                loss_mae_tre,
-                mae_trainable_vars)
+            mae_trainable_vars = self.revIn_tre.trainable_variables + \
+                self.masked_autoencoder.trainable_variables
+            mae_gradients = tape.gradient(loss_mae_tre, mae_trainable_vars)
 
             # update weights
-            self.mae_tre_optimizer.apply_gradients(
-                zip(mae_graidents, mae_trainable_vars))
+            self.mae_tre_optimizer.apply_gradients(zip(mae_gradients, mae_trainable_vars))
 
             # log losses
             self.loss_tracker_mae_comp.update_state(loss_mae_comp)
@@ -845,17 +822,13 @@ class PreTraining(tf.keras.Model):
                     mask=mask,
                     loss_fn=tf.keras.losses.mean_squared_error)
 
-                mae_trainable_vars = self.revIn_sea.trainable_variables + \
-                    self.masked_autoencoder.trainable_variables
-
             # compute gradients
-            mae_graidents = tape.gradient(
-                loss_mae_sea,
-                mae_trainable_vars)
+            mae_trainable_vars = self.revIn_sea.trainable_variables + \
+                self.masked_autoencoder.trainable_variables
+            mae_gradients = tape.gradient(loss_mae_sea, mae_trainable_vars)
 
             # update weights
-            self.mae_sea_optimizer.apply_gradients(
-                zip(mae_graidents, mae_trainable_vars))
+            self.mae_sea_optimizer.apply_gradients(zip(mae_gradients, mae_trainable_vars))
 
             # log losses
             self.loss_tracker_mae_comp.update_state(loss_mae_comp)
@@ -876,17 +849,17 @@ class PreTraining(tf.keras.Model):
                     distance_true - distance_false + self.cl_margin,
                     0.0)
 
-        # compute gradients for contrastive learnign
-        trainable_vars = \
+        # compute gradients for contrastive learning
+        cl_trainable_vars = \
             self.revIn_tre.trainable_variables + \
             self.revIn_sea.trainable_variables + \
             self.revIn_res.trainable_variables + \
             self.contrastive_learning.trainable_variables
-        gradients = tape.gradient(loss_cl, trainable_vars)
+
+        cl_gradients = tape.gradient(loss_cl, cl_trainable_vars)
 
         # update weights
-        self.cl_optimizer.apply_gradients(
-            zip(gradients, trainable_vars))
+        self.cl_optimizer.apply_gradients(zip(cl_gradients, cl_trainable_vars))
 
         mae_composed = self.calculate_masked_loss(
             y_pred=y_pred_composed,
@@ -1144,6 +1117,7 @@ class PreTraining(tf.keras.Model):
 
             return self.masked_autoencoder((tre_patch, sea_patch, res_patch, dates))
 
+
 def build_model(
     nr_of_covariates: int,
     patch_size: int,
@@ -1255,3 +1229,49 @@ def build_model(
         force_cl=force_cl)
 
     return model
+
+
+def compile_model(model: PreTraining) -> PreTraining:
+    mae_comp_optimizer = tf.keras.optimizers.Adam(clipnorm=1.0)
+    mae_tre_optimizer = tf.keras.optimizers.Adam(clipnorm=1.0)
+    mae_sea_optimizer = tf.keras.optimizers.Adam(clipnorm=1.0)
+    cl_optimizer = tf.keras.optimizers.Adam(clipnorm=1.0)
+
+    model.compile(
+        mae_comp_optimizer=mae_comp_optimizer,
+        mae_tre_optimizer=mae_tre_optimizer,
+        mae_sea_optimizer=mae_sea_optimizer,
+        cl_optimizer=cl_optimizer)
+
+    return model
+
+
+def get_callbacks(
+    embedding_dims: int,
+    warmup_steps: int,
+    scale_factor: float,
+    patience: int,
+    warmup_epochs_early_stopping: int) -> list:
+
+    learning_rate_callback = LearningRateCallback(
+        d_model=embedding_dims,
+        warmup_steps=warmup_steps,
+        scale_factor=scale_factor)
+
+    ram_cleaner_callback = RamCleaner()
+
+    terminate_on_nan_callback = tf.keras.callbacks.TerminateOnNaN()
+
+    early_stopping = tf.keras.callbacks.EarlyStopping(
+        monitor='val_mae_composed',
+        patience=patience,
+        start_from_epoch=warmup_epochs_early_stopping,
+        restore_best_weights=True)
+
+    callbacks = [
+        terminate_on_nan_callback,
+        ram_cleaner_callback,
+        learning_rate_callback,
+        early_stopping]
+
+    return callbacks

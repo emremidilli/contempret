@@ -4,10 +4,9 @@ import os
 
 import tensorflow as tf
 
-from tsf_model import build_model, Tuner
+from tsf_model.tuner.tuner import build_model_to_tune, Tuner
 
-from utils import (
-    get_args)
+from utils import get_args
 
 if __name__ == '__main__':
     '''Tunes the hyperparameters of foundation model.'''
@@ -23,6 +22,9 @@ if __name__ == '__main__':
 
     # set constants
     HP_PROJECT = 'my_project'
+
+    # configure mixed precision policy
+    tf.keras.mixed_precision.set_global_policy("float32")
 
     # get inputs.
     ds_train = tf.data.Dataset.load(
@@ -48,7 +50,7 @@ if __name__ == '__main__':
     nr_of_covariates = ds_train.element_spec[0].shape[-1]
 
     tuner = Tuner(
-        hypermodel=lambda hp: build_model(
+        hypermodel=lambda hp: build_model_to_tune(
             hp,
             nr_of_timesteps=nr_of_timesteps,
             nr_of_covariates=nr_of_covariates,
@@ -59,8 +61,7 @@ if __name__ == '__main__':
         factor=factor,
         executions_per_trial=executions_per_trial,
         directory=output_dir,
-        project_name=HP_PROJECT,
-        nr_of_timesteps=nr_of_timesteps)
+        project_name=HP_PROJECT)
 
     tuner.search(
         ds_train,
