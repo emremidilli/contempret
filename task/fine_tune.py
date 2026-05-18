@@ -199,4 +199,6 @@ if __name__ == '__main__':
     save_npy(actual_test, output_dir,'actual_test.npy')
     save_npy(pred_test, output_dir,'pred_test.npy')
 
+    os.remove(checkpoint_path)
+
     print('Successful.')

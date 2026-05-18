@@ -74,78 +74,6 @@ class BaseFineTuning(tf.keras.Model):
         return (tre_patch, sea_patch, res_patch, dates)
 
 
-# @tf.keras.saving.register_keras_serializable()
-# class SequencePredictor(BaseFineTuning):
-#     '''Keras model for fine-tuning univariate time series.'''
-#     def __init__(
-#         self,
-#         revIn_tre,
-#         revIn_sea,
-#         revIn_res,
-#         patch_tokenizer,
-#         representation,
-#         nr_of_timesteps,
-#         tune_time2vec,
-#         **kwargs):
-#         '''
-#         args:
-
-#         '''
-#         super().__init__(
-#             revIn_tre=revIn_tre,
-#             revIn_sea=revIn_sea,
-#             revIn_res=revIn_res,
-#             patch_tokenizer=patch_tokenizer,
-#             representation=representation,
-#             nr_of_timesteps=nr_of_timesteps,
-#             tune_time2vec=tune_time2vec,
-#             **kwargs)
-
-#         self.decoder_tre = LinearHead(
-#             nr_of_timesteps=nr_of_timesteps,
-#             nr_of_covariates=1,
-#             name='linear_head_trend')
-#         self.decoder_sea = LinearHead(
-#             nr_of_timesteps=nr_of_timesteps,
-#             nr_of_covariates=1,
-#             name='linear_head_seasonality')
-#         self.decoder_res = LinearHead(
-#             nr_of_timesteps=nr_of_timesteps,
-#             nr_of_covariates=1,
-#             name='linear_head_residual')
-
-#     def call(self, inputs):
-#         '''
-#         Timesteps of forecast horizon are masked.
-#         args:
-#             tre: (None, timesteps, 1)
-#             sea: (None, timesteps, 1)
-#             res: (None, timesteps, 1)
-#             dates: (None, features)
-#         returns:
-#             pred: (None, timesteps, 1)
-#         '''
-#         tre, sea, res, dates = inputs
-
-#         tre_patch, sea_patch, res_patch, dates = self.normalize_and_tokenize(inputs)
-
-#         y_cont_temp = self.representation((tre_patch, sea_patch, res_patch, dates))
-
-#         y_pred_tre = self.decoder_tre(y_cont_temp)
-#         y_pred_sea = self.decoder_sea(y_cont_temp)
-#         y_pred_res = self.decoder_res(y_cont_temp)
-
-#         # instance denormalize
-#         y_pred_tre = self.revIn_tre.denormalize((tre, y_pred_tre))
-#         y_pred_sea = self.revIn_sea.denormalize((sea, y_pred_sea))
-#         y_pred_res = self.revIn_res.denormalize((res, y_pred_res))
-
-#         # compose
-#         pred = y_pred_tre + y_pred_sea + y_pred_res
-
-#         return pred
-
-
 @tf.keras.saving.register_keras_serializable()
 class SequencePredictor(BaseFineTuning):
     '''Keras model for fine-tuning univariate time series.'''
@@ -173,10 +101,18 @@ class SequencePredictor(BaseFineTuning):
             tune_time2vec=tune_time2vec,
             **kwargs)
 
-        self.decoder = LinearHead(
+        self.decoder_tre = LinearHead(
             nr_of_timesteps=nr_of_timesteps,
             nr_of_covariates=1,
-            name='decoder')
+            name='linear_head_trend')
+        self.decoder_sea = LinearHead(
+            nr_of_timesteps=nr_of_timesteps,
+            nr_of_covariates=1,
+            name='linear_head_seasonality')
+        self.decoder_res = LinearHead(
+            nr_of_timesteps=nr_of_timesteps,
+            nr_of_covariates=1,
+            name='linear_head_residual')
 
     def call(self, inputs):
         '''
@@ -195,9 +131,73 @@ class SequencePredictor(BaseFineTuning):
 
         y_cont_temp = self.representation((tre_patch, sea_patch, res_patch, dates))
 
-        y_pred = self.decoder(y_cont_temp)
+        y_pred_tre = self.decoder_tre(y_cont_temp)
+        y_pred_sea = self.decoder_sea(y_cont_temp)
+        y_pred_res = self.decoder_res(y_cont_temp)
 
-        return y_pred
+        # instance denormalize
+        y_pred_tre = self.revIn_tre.denormalize((tre, y_pred_tre))
+        y_pred_sea = self.revIn_sea.denormalize((sea, y_pred_sea))
+        y_pred_res = self.revIn_res.denormalize((res, y_pred_res))
+
+        # compose
+        pred = y_pred_tre + y_pred_sea + y_pred_res
+
+        return pred
+
+
+# @tf.keras.saving.register_keras_serializable()
+# class SequencePredictor(BaseFineTuning):
+#     '''Keras model for fine-tuning univariate time series.'''
+#     def __init__(
+#         self,
+#         revIn_tre,
+#         revIn_sea,
+#         revIn_res,
+#         patch_tokenizer,
+#         representation,
+#         nr_of_timesteps,
+#         tune_time2vec,
+#         **kwargs):
+#         '''
+#         args:
+
+#         '''
+#         super().__init__(
+#             revIn_tre=revIn_tre,
+#             revIn_sea=revIn_sea,
+#             revIn_res=revIn_res,
+#             patch_tokenizer=patch_tokenizer,
+#             representation=representation,
+#             nr_of_timesteps=nr_of_timesteps,
+#             tune_time2vec=tune_time2vec,
+#             **kwargs)
+
+#         self.decoder = LinearHead(
+#             nr_of_timesteps=nr_of_timesteps,
+#             nr_of_covariates=1,
+#             name='decoder')
+
+#     def call(self, inputs):
+#         '''
+#         Timesteps of forecast horizon are masked.
+#         args:
+#             tre: (None, timesteps, 1)
+#             sea: (None, timesteps, 1)
+#             res: (None, timesteps, 1)
+#             dates: (None, features)
+#         returns:
+#             pred: (None, timesteps, 1)
+#         '''
+#         tre, sea, res, dates = inputs
+
+#         tre_patch, sea_patch, res_patch, dates = self.normalize_and_tokenize(inputs)
+
+#         y_cont_temp = self.representation((tre_patch, sea_patch, res_patch, dates))
+
+#         y_pred = self.decoder(y_cont_temp)
+
+#         return y_pred
 
 
 @tf.keras.saving.register_keras_serializable()

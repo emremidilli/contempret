@@ -467,7 +467,7 @@ class PreTraining(tf.keras.Model):
 
         args:
             y_pred (None, timesteps, covariates) - predicted output
-                which is unpactached.
+                which is unpatched.
             y_true (None, timesteps, covariates)- actual output
                 which is unpatched.
             mask (timesteps,) - boolean mask for patches. True values
@@ -1231,11 +1231,11 @@ def build_model(
     return model
 
 
-def compile_model(model: PreTraining) -> PreTraining:
-    mae_comp_optimizer = tf.keras.optimizers.Adam(clipnorm=1.0)
-    mae_tre_optimizer = tf.keras.optimizers.Adam(clipnorm=1.0)
-    mae_sea_optimizer = tf.keras.optimizers.Adam(clipnorm=1.0)
-    cl_optimizer = tf.keras.optimizers.Adam(clipnorm=1.0)
+def compile_model(model: PreTraining, clip_norm: float) -> PreTraining:
+    mae_comp_optimizer = tf.keras.optimizers.Adam(clipnorm=clip_norm)
+    mae_tre_optimizer = tf.keras.optimizers.Adam(clipnorm=clip_norm)
+    mae_sea_optimizer = tf.keras.optimizers.Adam(clipnorm=clip_norm)
+    cl_optimizer = tf.keras.optimizers.Adam(clipnorm=clip_norm)
 
     model.compile(
         mae_comp_optimizer=mae_comp_optimizer,

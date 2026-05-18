@@ -164,7 +164,7 @@ if __name__ == '__main__':
             custom_prompt_keys_seasonality=custom_prompt_keys_seasonality,
             custom_prompt_keys_residual=custom_prompt_keys_residual)
 
-        model = compile_model(model=model)
+        model = compile_model(model=model, clip_norm=clip_norm)
 
         callbacks = get_callbacks(
             embedding_dims=embedding_dims,
@@ -190,7 +190,7 @@ if __name__ == '__main__':
 
     # Load the best initialization
     model = tf.keras.models.load_model(checkpoint_path)
-    model = compile_model(model=model)
+    model = compile_model(model=model, clip_norm=clip_norm)
 
     # define callbacks
     callbacks = get_callbacks(
@@ -245,5 +245,7 @@ if __name__ == '__main__':
         actual_test.save(os.path.join(output_dir, 'actual_test'))
         pred_test.save(os.path.join(output_dir, 'pred_test'))
         mask_test.save(os.path.join(output_dir, 'mask_test'))
+
+    os.remove(checkpoint_path)
 
     print('Successful.')
