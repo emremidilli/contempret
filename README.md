@@ -34,40 +34,7 @@ python task/tune_hyperparameters.py \
 ```
 
 #### Pre-train foundational model
-```bash
-python task/pre_train.py \
-  --input_dir="./bin/preprocessed/ETTh1_OT_96" \
-  --output_dir="./bin/models/pt_etth1_96_wo_prompt/" \
-  --mask_rate=0.40 \
-  --mask_scalar=0.00 \
-  --mini_batch_size=128 \
-  --clip_norm=0.1 \
-  --l1_trend=0.000631 \
-  --l2_trend=1.5435e-06 \
-  --l1_seasonality=0.00081708 \
-  --l2_seasonality=1.0746e-05 \
-  --l1_residual=0.0068574 \
-  --l2_residual=0.0017232 \
-  --nr_of_encoder_blocks=8 \
-  --nr_of_heads=2 \
-  --dropout_rate=0.3 \
-  --encoder_ffn_units=256 \
-  --embedding_dims=64 \
-  --projection_head=32 \
-  --warmup_steps=4000 \
-  --scale_factor=0.1 \
-  --mae_threshold_comp=0.25 \
-  --mae_threshold_tre=0.25 \
-  --mae_threshold_sea=0.10 \
-  --cl_margin=0.25 \
-  --patch_size=12 \
-  --prompt_pool_size=0 \
-  --nr_of_most_similar_prompts=0 \
-  --patience=20 \
-  --warmup_epochs_early_stopping=100 \
-  --nr_of_seeds=10 \
-  --nr_of_epochs=1000
-```
+
 `
   # the most recent one
 4                 |8                 |nr_of_encoder_blocks

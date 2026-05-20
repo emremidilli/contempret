@@ -4,7 +4,7 @@ import os
 
 import tensorflow as tf
 
-from tsf_model import InputPreProcessor
+from tsf_model.models.pre_processing import InputPreProcessor
 
 from utils import (
     get_args,
