@@ -195,14 +195,12 @@ preprocess_ft: \
 	preprocess_ft_ETTm1_96_96 preprocess_ft_ETTm1_192_192 preprocess_ft_ETTm1_384_336 preprocess_ft_ETTm1_768_720 \
 	preprocess_ft_ETTm2_96_96 preprocess_ft_ETTm2_192_192 preprocess_ft_ETTm2_384_336 preprocess_ft_ETTm2_768_720
 
-
-
 # ── Training ───────────────────────────────────────────────────────────────────
 
 train_foundation_etth1_96:
 	$(PYTHON) task/pre_train.py \
-		--input_dir="./bin/preprocessed/ETTh1_OT_96" \
-		--output_dir="./bin/models/ft13/" \
+		--input_dir="./bin/preprocessed/pt_ETTh1_96" \
+		--output_dir="./bin/models/pt_ETTh1_96/" \
 		--mask_rate=0.40 \
 		--mask_scalar=0.00 \
 		--mini_batch_size=128 \
