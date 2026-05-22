@@ -269,4 +269,4 @@ train_foundation_tiny:
 		--patience=20 \
 		--warmup_epochs_early_stopping=100 \
 		--nr_of_seeds=1 \
-		--nr_of_epochs=100
+		--nr_of_epochs=10

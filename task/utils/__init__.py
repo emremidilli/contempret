@@ -6,7 +6,8 @@ from .metrics import (  # noqa: F401
 
 from .callbacks import (  # noqa: F401
     LearningRateCallback,
-    RamCleaner)
+    RamCleaner,
+    TimingCallback)
 
 from .metrics import (  # noqa: F401
     get_metrics)

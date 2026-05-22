@@ -3,7 +3,7 @@ import tensorflow as tf
 from tsf_model.layers import LinearHead, \
     ReversibleInstanceNormalization
 
-from utils import RamCleaner
+from utils import RamCleaner, TimingCallback
 
 
 @tf.keras.saving.register_keras_serializable()
@@ -268,10 +268,13 @@ def get_callbacks(monitor: str, patience: int, warmup_epochs_early_stopping: int
         start_from_epoch=warmup_epochs_early_stopping,
         restore_best_weights=True)
 
+    timing_callback = TimingCallback()
+
     callbacks = [
         terminate_on_nan_callback,
         ram_cleaner_callback,
-        early_stopping]
+        early_stopping,
+        timing_callback]
 
     return callbacks
 
