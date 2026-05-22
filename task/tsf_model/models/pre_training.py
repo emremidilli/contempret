@@ -377,7 +377,7 @@ class PreTraining(tf.keras.Model):
         self.cos_true = tf.keras.metrics.CosineSimilarity(name='cos_true')
         self.cos_false = tf.keras.metrics.CosineSimilarity(name='cos_false')
         self.mae_composed = tf.keras.metrics.Mean(name='mae_composed')
-        self.cosine_similarity = tf.keras.metrics.CosineSimilarity()
+        self.cosine_similarity = lambda y_true, y_pred: tf.keras.losses.cosine_similarity(y_true, y_pred, axis=-1) * -1
 
     def compile(
         self,
@@ -587,12 +587,7 @@ class PreTraining(tf.keras.Model):
                 achieve_tre
             ])
 
-        cl = tf.reduce_all(
-            [
-                achieve_comp,
-                achieve_tre,
-                achieve_sea
-            ])
+        cl = tf.logical_not(tf.equal(self.force_cl, -1))
         #############################################
 
         # introduce force to train
@@ -608,10 +603,6 @@ class PreTraining(tf.keras.Model):
         msk_autoenc_sea = tf.logical_or(
             msk_autoenc_sea,
             tf.equal(self.force_mae_sea, 1))
-
-        cl = tf.logical_or(
-            cl,
-            tf.equal(self.force_cl, 1))
         #############################################
 
         # introduce force to not train
@@ -627,10 +618,6 @@ class PreTraining(tf.keras.Model):
         msk_autoenc_sea = tf.logical_and(
             msk_autoenc_sea,
             tf.logical_not(tf.equal(self.force_mae_sea, -1)))
-
-        cl = tf.logical_and(
-            cl,
-            tf.logical_not(tf.equal(self.force_cl, -1)))
         #############################################
 
         tasks = tf.cond(
@@ -835,31 +822,41 @@ class PreTraining(tf.keras.Model):
             self.loss_tracker_mae_tre.update_state(loss_mae_tre)
             self.loss_tracker_mae_sea.update_state(loss_mae_sea)
 
-        # contrastive learning
-        with tf.GradientTape() as tape:
-            y_logits_false, y_logits_true, y_logits_anchor = self(data, training=True, mask=cl_mask, task="contrastive")
+        if tf.reduce_any(
+            tf.equal(
+                tasks_to_train,
+                tf.constant('cl'))):
 
-            # compute the loss value
-            distance_true = tf.reduce_sum(
-                tf.square(y_logits_anchor - y_logits_true), -1)
-            distance_false = tf.reduce_sum(
-                tf.square(y_logits_anchor - y_logits_false), -1)
-            loss_cl = tf\
-                .maximum(
-                    distance_true - distance_false + self.cl_margin,
-                    0.0)
+            print("training cl")
+            # contrastive learning
+            with tf.GradientTape() as tape:
+                y_logits_false, y_logits_true, y_logits_anchor = self(data, training=True, mask=cl_mask, task="contrastive")
 
-        # compute gradients for contrastive learning
-        cl_trainable_vars = \
-            self.revIn_tre.trainable_variables + \
-            self.revIn_sea.trainable_variables + \
-            self.revIn_res.trainable_variables + \
-            self.contrastive_learning.trainable_variables
+                # compute the loss value
+                distance_true = tf.reduce_sum(
+                    tf.square(y_logits_anchor - y_logits_true), -1)
+                distance_false = tf.reduce_sum(
+                    tf.square(y_logits_anchor - y_logits_false), -1)
+                loss_cl = tf\
+                    .maximum(
+                        distance_true - distance_false + self.cl_margin,
+                        0.0)
 
-        cl_gradients = tape.gradient(loss_cl, cl_trainable_vars)
+            # compute gradients for contrastive learning
+            cl_trainable_vars = \
+                self.revIn_tre.trainable_variables + \
+                self.revIn_sea.trainable_variables + \
+                self.revIn_res.trainable_variables + \
+                self.contrastive_learning.trainable_variables
 
-        # update weights
-        self.cl_optimizer.apply_gradients(zip(cl_gradients, cl_trainable_vars))
+            cl_gradients = tape.gradient(loss_cl, cl_trainable_vars)
+
+            # update weights
+            self.cl_optimizer.apply_gradients(zip(cl_gradients, cl_trainable_vars))
+
+            self.loss_tracker_cl.update_state(loss_cl)
+            self.cos_true.update_state(y_true=y_logits_anchor, y_pred=y_logits_true)
+            self.cos_false.update_state(y_true=y_logits_anchor, y_pred=y_logits_false)
 
         mae_composed = self.calculate_masked_loss(
             y_pred=y_pred_composed,
@@ -911,9 +908,6 @@ class PreTraining(tf.keras.Model):
         self.cos_sea.update_state(cos_sea)
         self.cos_res.update_state(cos_res)
 
-        self.loss_tracker_cl.update_state(loss_cl)
-        self.cos_true.update_state(y_true=y_logits_anchor, y_pred=y_logits_true)
-        self.cos_false.update_state(y_true=y_logits_anchor, y_pred=y_logits_false)
         self.lr_tracker.update_state(self.cl_optimizer.lr)
 
         dic = {
