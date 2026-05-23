@@ -200,6 +200,20 @@ preprocess_pt_tiny: ID = pt_tiny
 preprocess_pt_tiny:
 	$(PIPELINE_PREPROCESS_PRE_TRAINING)
 
+preprocess_ft_tiny: ID = ft_tiny
+preprocess_ft_tiny:
+	$(PIPELINE_PREPROCESS_FINE_TUNING)
+
+hp_tune_tiny:
+	$(PYTHON) task/tune_hyperparameters.py \
+		--input_dir="./bin/preprocessed/pt_tiny" \
+		--output_dir="./bin/hp-tuning/pt_tiny" \
+		--mini_batch_size=32 \
+		--max_epochs=3 \
+		--executions_per_trial=1 \
+		--factor=2 \
+		--training_mode="weighted"
+
 # ── Training ───────────────────────────────────────────────────────────────────
 
 train_foundation_etth1_96:
@@ -269,4 +283,22 @@ train_foundation_tiny:
 		--patience=20 \
 		--warmup_epochs_early_stopping=100 \
 		--nr_of_seeds=1 \
-		--nr_of_epochs=10
+		--nr_of_epochs=10 \
+		--w_comp=0.25 \
+		--w_tre=0.75 \
+		--w_sea=1.00 \
+		--w_cl=1.00
+
+train_fine_tuning_tiny:
+	$(PYTHON) task/fine_tune.py \
+		--input_dir="./bin/preprocessed/ft_tiny/" \
+		--output_dir="./bin/models/ft_tiny/" \
+		--pre_trained_model_dir="./bin/models/pt_tiny/" \
+		--patience=50 \
+		--clip_norm=0.1 \
+		--learning_rate=0.001 \
+		--warmup_epochs=1 \
+		--tune_time2vec="True" \
+		--nr_of_seeds=1 \
+		--nr_of_epochs=10 \
+		--mini_batch_size=32

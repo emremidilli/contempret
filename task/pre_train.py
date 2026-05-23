@@ -60,6 +60,10 @@ if __name__ == '__main__':
     save_only_light_artifacts = args.save_only_light_artifacts
     prefer_dense_to_time2vec = args.prefer_dense_to_time2vec
     nr_of_seeds = args.nr_of_seeds
+    w_comp = args.w_comp
+    w_tre = args.w_tre
+    w_sea = args.w_sea
+    w_cl = args.w_cl
 
     # configure mixed precision policy
     tf.keras.mixed_precision.set_global_policy("float32")
@@ -162,7 +166,11 @@ if __name__ == '__main__':
             prefer_dense_to_time2vec=prefer_dense_to_time2vec,
             custom_prompt_keys_trend=custom_prompt_keys_trend,
             custom_prompt_keys_seasonality=custom_prompt_keys_seasonality,
-            custom_prompt_keys_residual=custom_prompt_keys_residual)
+            custom_prompt_keys_residual=custom_prompt_keys_residual,
+            w_comp=w_comp,
+            w_tre=w_tre,
+            w_sea=w_sea,
+            w_cl=w_cl)
 
         model = compile_model(model=model, clip_norm=clip_norm)
 

@@ -1,3 +1,5 @@
+import json
+
 import keras_tuner as kt
 
 import os
@@ -19,6 +21,7 @@ if __name__ == '__main__':
     max_epochs = args.max_epochs
     executions_per_trial = args.executions_per_trial
     factor = args.factor
+    training_mode = args.training_mode
 
     # set constants
     HP_PROJECT = 'my_project'
@@ -54,7 +57,8 @@ if __name__ == '__main__':
             hp,
             nr_of_timesteps=nr_of_timesteps,
             nr_of_covariates=nr_of_covariates,
-            use_time2vec=use_time2vec
+            use_time2vec=use_time2vec,
+            training_mode=training_mode
         ),
         objective=kt.Objective('val_mae_composed', direction='min'),
         max_epochs=max_epochs,
@@ -66,5 +70,10 @@ if __name__ == '__main__':
     tuner.search(
         ds_train,
         validation_data=ds_val)
+
+    best_hp = tuner.get_best_hyperparameters(num_trials=1)[0].values
+    best_hp_path = os.path.join(output_dir, 'best_hyperparameters.json')
+    with open(best_hp_path, 'w') as f:
+        json.dump(best_hp, f, indent=2)
 
     print('Successful.')

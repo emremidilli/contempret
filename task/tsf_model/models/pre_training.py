@@ -1080,6 +1080,12 @@ class PreTrainingWeightedLoss(PreTraining):
         # to tf.keras.Model.compile so self.optimizer is set normally.
         super(PreTraining, self).compile(optimizer=optimizer, **kwargs)
 
+    def get_compile_config(self) -> dict:
+        return {'optimizer': tf.keras.optimizers.serialize(self.optimizer)}
+
+    def compile_from_config(self, config: dict) -> None:
+        self.compile(optimizer=tf.keras.optimizers.deserialize(config['optimizer']))
+
     @property
     def metrics(self):
         return [

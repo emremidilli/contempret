@@ -58,11 +58,13 @@ def get_args():
                         type=eval, default="False")
     parser.add_argument("--prefer_dense_to_time2vec",
                         type=eval, default="False")
+    parser.add_argument("--w_comp", type=float, default=None)
+    parser.add_argument("--w_tre", type=float, default=None)
+    parser.add_argument("--w_sea", type=float, default=None)
+    parser.add_argument("--w_cl", type=float, default=None)
 
     # Fine-tune specific
-    parser.add_argument("--pre_trained_model_dir", type=str,
-                        default="s3://time-series-forecasting-"
-                                "media/training/test_fine_tuning/")
+    parser.add_argument("--pre_trained_model_dir", type=str, default="test")
     parser.add_argument("--learning_rate", type=float, default=1e-3)
     parser.add_argument("--task_type", type=str,
                         choices=["sequence_prediction",
@@ -74,6 +76,10 @@ def get_args():
     parser.add_argument("--max_epochs", type=int, default=5)
     parser.add_argument("--factor", type=int, default=3)
     parser.add_argument("--executions_per_trial", type=int, default=1)
+    parser.add_argument(
+        "--training_mode",
+        choices=["sequential", "weighted"],
+        default="sequential")
 
     # Pre-process
     parser.add_argument("--pool_size_trend", type=int, default=24)

@@ -36,10 +36,20 @@ class LearningRateCallback(tf.keras.callbacks.Callback):
         '''sets the calculated learning rate to the optimzer'''
         self.step_nr = self.step_nr + 1
         lr = self.schedule(step=self.step_nr)
-        tf.keras.backend.set_value(self.model.mae_comp_optimizer.lr, lr)
-        tf.keras.backend.set_value(self.model.mae_tre_optimizer.lr, lr)
-        tf.keras.backend.set_value(self.model.mae_sea_optimizer.lr, lr)
-        tf.keras.backend.set_value(self.model.cl_optimizer.lr, lr)
+        if hasattr(self.model, 'mae_comp_optimizer'):
+            tf.keras.backend.set_value(self.model.mae_comp_optimizer.lr, lr)
+
+        if hasattr(self.model, 'mae_tre_optimizer'):
+            tf.keras.backend.set_value(self.model.mae_tre_optimizer.lr, lr)
+
+        if hasattr(self.model, 'mae_sea_optimizer'):
+            tf.keras.backend.set_value(self.model.mae_sea_optimizer.lr, lr)
+
+        if hasattr(self.model, 'mae_sea_optimizer'):
+            tf.keras.backend.set_value(self.model.cl_optimizer.lr, lr)
+
+        if hasattr(self.model, 'optimizer'):
+            tf.keras.backend.set_value(self.model.optimizer.lr, lr)
 
 
 class RamCleaner(tf.keras.callbacks.Callback):

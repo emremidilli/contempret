@@ -4,17 +4,19 @@ import keras_tuner as kt
 
 import tensorflow as tf
 
-from tsf_model.models.pre_training import build_model
+from tsf_model.models.pre_training import (
+    build_model,
+    compile_model)
 
-from utils import (
-    LearningRateCallback)
+from utils import LearningRateCallback
 
 
 def build_model_to_tune(
     hp: kt.HyperParameters,
     nr_of_timesteps: int,
     nr_of_covariates: int,
-    use_time2vec: bool):
+    use_time2vec: bool,
+    training_mode: str):
     '''
     function that builds model for tuning.
     during pre-training, all self-supervised tasks are forced to be trained.
@@ -37,6 +39,7 @@ def build_model_to_tune(
     CUSTOM_PROMPT_KEYS_TREND = None
     CUSTOM_PROMPT_KEYS_SEASONALITY = None
     CUSTOM_PROMPT_KEYS_RESIDUAL = None
+    CLIP_NORM = 0.10
 
     # define hp parameters
     nr_of_encoder_blocks = hp.Int('nr_of_encoder_blocks', 2, 8, step=1)
@@ -88,20 +91,39 @@ def build_model_to_tune(
         max_value=1e-2,
         sampling='log')
 
-    # initialize optimizers
-    mae_comp_optimizer = tf.keras.optimizers.Adam()
-    mae_tre_optimizer = tf.keras.optimizers.Adam()
-    mae_sea_optimizer = tf.keras.optimizers.Adam()
+    w_comp = None
+    w_tre = None
+    w_sea = None
+    w_cl = None
+    if training_mode == "weighted":
+        w_comp = hp.Float(
+            'w_comp',
+            min_value=0.01,
+            max_value=1.00,
+            sampling='log')
 
-    cl_optimizer = tf.keras.optimizers.Adam()
+        w_tre = hp.Float(
+            'w_tre',
+            min_value=0.01,
+            max_value=1.00,
+            sampling='log')
+
+        w_sea = hp.Float(
+            'w_sea',
+            min_value=0.01,
+            max_value=1.00,
+            sampling='log')
+
+        w_cl = hp.Float(
+            'w_cl',
+            min_value=0.01,
+            max_value=1.00,
+            sampling='log')
 
     # define model
     contrastive_learning_patches = int(nr_of_timesteps * (MASK_RATE))
     contrastive_learning_patches = \
         int(contrastive_learning_patches / patch_size)
-
-    masked_auto_encoder_patches = int(nr_of_timesteps / patch_size)
-
 
     model = build_model(
         nr_of_covariates=nr_of_covariates,
@@ -136,13 +158,13 @@ def build_model_to_tune(
         prefer_dense_to_time2vec=PREFER_DENSE_TO_TIME2VEC,
         custom_prompt_keys_trend=CUSTOM_PROMPT_KEYS_TREND,
         custom_prompt_keys_seasonality=CUSTOM_PROMPT_KEYS_SEASONALITY,
-        custom_prompt_keys_residual=CUSTOM_PROMPT_KEYS_RESIDUAL)
+        custom_prompt_keys_residual=CUSTOM_PROMPT_KEYS_RESIDUAL,
+        w_comp=w_comp,
+        w_tre=w_tre,
+        w_sea=w_sea,
+        w_cl=w_cl)
 
-    model.compile(
-        mae_comp_optimizer=mae_comp_optimizer,
-        mae_tre_optimizer=mae_tre_optimizer,
-        mae_sea_optimizer=mae_sea_optimizer,
-        cl_optimizer=cl_optimizer)
+    model = compile_model(model=model, clip_norm=CLIP_NORM)
 
     return model
 
@@ -151,7 +173,6 @@ def get_callbacks(hp):
     '''
     returns the callbacks for hyperparameter tuning.
     '''
-    MASK_RATE = 0.40
     SCALE_FACTOR = 1.0
 
     embedding_dims = hp.get('embedding_dims')
