@@ -1,11 +1,8 @@
 CONTAINER = contempret-app_contempret-1
 PYTHON = docker exec -i $(CONTAINER) python
 
-.PHONY: install run preprocess preprocess_ft \
-	preprocess_pt_ETTh1_96 preprocess_pt_ETTh1_192 preprocess_pt_ETTh1_384 preprocess_pt_ETTh1_768 \
-	preprocess_pt_ETTh2_96 preprocess_pt_ETTh2_192 preprocess_pt_ETTh2_384 preprocess_pt_ETTh2_768 \
-	preprocess_pt_ETTm1_96 preprocess_pt_ETTm1_192 preprocess_pt_ETTm1_384 preprocess_pt_ETTm1_768 \
-	preprocess_pt_ETTm2_96 preprocess_pt_ETTm2_192 preprocess_pt_ETTm2_384 preprocess_pt_ETTm2_768 \
+.PHONY: install run preprocess_pt preprocess_ft \
+	preprocess_pt_etth_96 preprocess_pt_etth_192 preprocess_pt_etth_384 preprocess_pt_etth_768 \
 	preprocess_ft_ETTh1_96_96 preprocess_ft_ETTh1_192_192 preprocess_ft_ETTh1_384_336 preprocess_ft_ETTh1_768_720 \
 	preprocess_ft_ETTh2_96_96 preprocess_ft_ETTh2_192_192 preprocess_ft_ETTh2_384_336 preprocess_ft_ETTh2_768_720 \
 	preprocess_ft_ETTm1_96_96 preprocess_ft_ETTm1_192_192 preprocess_ft_ETTm1_384_336 preprocess_ft_ETTm1_768_720 \
@@ -49,33 +46,17 @@ run_preprocess_fine_tuning: run
 
 # ── ETTh1 ──────────────────────────────────────────────────────────────────────
 
-preprocess_pt_ETTh1_96: ID = pt_ETTh1_96
-preprocess_pt_ETTh1_96:
-	$(PIPELINE_PREPROCESS_PRE_TRAINING)
-
 preprocess_ft_ETTh1_96_96: ID = ft_ETTh1_96_96
 preprocess_ft_ETTh1_96_96:
 	$(PIPELINE_PREPROCESS_FINE_TUNING)
-
-preprocess_pt_ETTh1_192: ID = pt_ETTh1_192
-preprocess_pt_ETTh1_192:
-	$(PIPELINE_PREPROCESS_PRE_TRAINING)
 
 preprocess_ft_ETTh1_192_192: ID = ft_ETTh1_192_192
 preprocess_ft_ETTh1_192_192:
 	$(PIPELINE_PREPROCESS_FINE_TUNING)
 
-preprocess_pt_ETTh1_384: ID = pt_ETTh1_384
-preprocess_pt_ETTh1_384:
-	$(PIPELINE_PREPROCESS_PRE_TRAINING)
-
 preprocess_ft_ETTh1_384_336: ID = ft_ETTh1_384_336
 preprocess_ft_ETTh1_384_336:
 	$(PIPELINE_PREPROCESS_FINE_TUNING)
-
-preprocess_pt_ETTh1_768: ID = pt_ETTh1_768
-preprocess_pt_ETTh1_768:
-	$(PIPELINE_PREPROCESS_PRE_TRAINING)
 
 preprocess_ft_ETTh1_768_720: ID = ft_ETTh1_768_720
 preprocess_ft_ETTh1_768_720:
@@ -83,33 +64,17 @@ preprocess_ft_ETTh1_768_720:
 
 # ── ETTh2 ──────────────────────────────────────────────────────────────────────
 
-preprocess_pt_ETTh2_96: ID = pt_ETTh2_96
-preprocess_pt_ETTh2_96:
-	$(PIPELINE_PREPROCESS_PRE_TRAINING)
-
 preprocess_ft_ETTh2_96_96: ID = ft_ETTh2_96_96
 preprocess_ft_ETTh2_96_96:
 	$(PIPELINE_PREPROCESS_FINE_TUNING)
-
-preprocess_pt_ETTh2_192: ID = pt_ETTh2_192
-preprocess_pt_ETTh2_192:
-	$(PIPELINE_PREPROCESS_PRE_TRAINING)
 
 preprocess_ft_ETTh2_192_192: ID = ft_ETTh2_192_192
 preprocess_ft_ETTh2_192_192:
 	$(PIPELINE_PREPROCESS_FINE_TUNING)
 
-preprocess_pt_ETTh2_384: ID = pt_ETTh2_384
-preprocess_pt_ETTh2_384:
-	$(PIPELINE_PREPROCESS_PRE_TRAINING)
-
 preprocess_ft_ETTh2_384_336: ID = ft_ETTh2_384_336
 preprocess_ft_ETTh2_384_336:
 	$(PIPELINE_PREPROCESS_FINE_TUNING)
-
-preprocess_pt_ETTh2_768: ID = pt_ETTh2_768
-preprocess_pt_ETTh2_768:
-	$(PIPELINE_PREPROCESS_PRE_TRAINING)
 
 preprocess_ft_ETTh2_768_720: ID = ft_ETTh2_768_720
 preprocess_ft_ETTh2_768_720:
@@ -117,33 +82,17 @@ preprocess_ft_ETTh2_768_720:
 
 # ── ETTm1 ──────────────────────────────────────────────────────────────────────
 
-preprocess_pt_ETTm1_96: ID = pt_ETTm1_96
-preprocess_pt_ETTm1_96:
-	$(PIPELINE_PREPROCESS_PRE_TRAINING)
-
 preprocess_ft_ETTm1_96_96: ID = ft_ETTm1_96_96
 preprocess_ft_ETTm1_96_96:
 	$(PIPELINE_PREPROCESS_FINE_TUNING)
-
-preprocess_pt_ETTm1_192: ID = pt_ETTm1_192
-preprocess_pt_ETTm1_192:
-	$(PIPELINE_PREPROCESS_PRE_TRAINING)
 
 preprocess_ft_ETTm1_192_192: ID = ft_ETTm1_192_192
 preprocess_ft_ETTm1_192_192:
 	$(PIPELINE_PREPROCESS_FINE_TUNING)
 
-preprocess_pt_ETTm1_384: ID = pt_ETTm1_384
-preprocess_pt_ETTm1_384:
-	$(PIPELINE_PREPROCESS_PRE_TRAINING)
-
 preprocess_ft_ETTm1_384_336: ID = ft_ETTm1_384_336
 preprocess_ft_ETTm1_384_336:
 	$(PIPELINE_PREPROCESS_FINE_TUNING)
-
-preprocess_pt_ETTm1_768: ID = pt_ETTm1_768
-preprocess_pt_ETTm1_768:
-	$(PIPELINE_PREPROCESS_PRE_TRAINING)
 
 preprocess_ft_ETTm1_768_720: ID = ft_ETTm1_768_720
 preprocess_ft_ETTm1_768_720:
@@ -151,43 +100,21 @@ preprocess_ft_ETTm1_768_720:
 
 # ── ETTm2 ──────────────────────────────────────────────────────────────────────
 
-preprocess_pt_ETTm2_96: ID = pt_ETTm2_96
-preprocess_pt_ETTm2_96:
-	$(PIPELINE_PREPROCESS_PRE_TRAINING)
-
 preprocess_ft_ETTm2_96_96: ID = ft_ETTm2_96_96
 preprocess_ft_ETTm2_96_96:
 	$(PIPELINE_PREPROCESS_FINE_TUNING)
-
-preprocess_pt_ETTm2_192: ID = pt_ETTm2_192
-preprocess_pt_ETTm2_192:
-	$(PIPELINE_PREPROCESS_PRE_TRAINING)
 
 preprocess_ft_ETTm2_192_192: ID = ft_ETTm2_192_192
 preprocess_ft_ETTm2_192_192:
 	$(PIPELINE_PREPROCESS_FINE_TUNING)
 
-preprocess_pt_ETTm2_384: ID = pt_ETTm2_384
-preprocess_pt_ETTm2_384:
-	$(PIPELINE_PREPROCESS_PRE_TRAINING)
-
 preprocess_ft_ETTm2_384_336: ID = ft_ETTm2_384_336
 preprocess_ft_ETTm2_384_336:
 	$(PIPELINE_PREPROCESS_FINE_TUNING)
 
-preprocess_pt_ETTm2_768: ID = pt_ETTm2_768
-preprocess_pt_ETTm2_768:
-	$(PIPELINE_PREPROCESS_PRE_TRAINING)
-
 preprocess_ft_ETTm2_768_720: ID = ft_ETTm2_768_720
 preprocess_ft_ETTm2_768_720:
 	$(PIPELINE_PREPROCESS_FINE_TUNING)
-
-preprocess_pt: \
-	preprocess_pt_ETTh1_96 preprocess_pt_ETTh1_192 preprocess_pt_ETTh1_384 preprocess_pt_ETTh1_768 \
-	preprocess_pt_ETTh2_96 preprocess_pt_ETTh2_192 preprocess_pt_ETTh2_384 preprocess_pt_ETTh2_768 \
-	preprocess_pt_ETTm1_96 preprocess_pt_ETTm1_192 preprocess_pt_ETTm1_384 preprocess_pt_ETTm1_768 \
-	preprocess_pt_ETTm2_96 preprocess_pt_ETTm2_192 preprocess_pt_ETTm2_384 preprocess_pt_ETTm2_768
 
 preprocess_ft: \
 	preprocess_ft_ETTh1_96_96 preprocess_ft_ETTh1_192_192 preprocess_ft_ETTh1_384_336 preprocess_ft_ETTh1_768_720 \
@@ -302,3 +229,47 @@ train_fine_tuning_tiny:
 		--nr_of_seeds=1 \
 		--nr_of_epochs=10 \
 		--mini_batch_size=32
+
+# ── Compile heteregenous data ───────────────────────────────────────────────────────────────────
+compile_pt_etth_96_data:
+	$(PYTHON) task/compile_heteregenous_data.py \
+		--input_dir_parent="./bin/interim/" \
+		--children_list="['pt_ETTh1_96', 'pt_ETTh2_96']" \
+		--output_dir="./bin/interim/pt_etth_96/"
+
+compile_pt_etth_192_data:
+	$(PYTHON) task/compile_heteregenous_data.py \
+		--input_dir_parent="./bin/interim/" \
+		--children_list="['pt_ETTh1_192', 'pt_ETTh2_192']" \
+		--output_dir="./bin/interim/pt_etth_192/"
+
+compile_pt_etth_384_data:
+	$(PYTHON) task/compile_heteregenous_data.py \
+		--input_dir_parent="./bin/interim/" \
+		--children_list="['pt_ETTh1_384', 'pt_ETTh2_384']" \
+		--output_dir="./bin/interim/pt_etth_384/"
+
+compile_pt_etth_768_data:
+	$(PYTHON) task/compile_heteregenous_data.py \
+		--input_dir_parent="./bin/interim/" \
+		--children_list="['pt_ETTh1_768', 'pt_ETTh2_768']" \
+		--output_dir="./bin/interim/pt_etth_768/"
+
+preprocess_pt_etth_96: ID = pt_etth_96
+preprocess_pt_etth_96:
+	$(PIPELINE_PREPROCESS_PRE_TRAINING)
+
+preprocess_pt_etth_192: ID = pt_etth_192
+preprocess_pt_etth_192:
+	$(PIPELINE_PREPROCESS_PRE_TRAINING)
+
+preprocess_pt_etth_384: ID = pt_etth_384
+preprocess_pt_etth_384:
+	$(PIPELINE_PREPROCESS_PRE_TRAINING)
+
+preprocess_pt_etth_768: ID = pt_etth_768
+preprocess_pt_etth_768:
+	$(PIPELINE_PREPROCESS_PRE_TRAINING)
+
+preprocess_pt: \
+	preprocess_pt_etth_96 preprocess_pt_etth_192 preprocess_pt_etth_384 preprocess_pt_etth_768
