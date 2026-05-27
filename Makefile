@@ -455,15 +455,47 @@ train_ft_etth1_96_96_wo_sequential:
 		--nr_of_epochs=10000 \
 		--mini_batch_size=128
 
-python task/fine_tune.py \
-	--input_dir="./bin/preprocessed/ft_ETTh1_96_96/" \
-	--output_dir="./bin/models/ft_etth1_96_96_02/" \
-	--pre_trained_model_dir="./bin/models/pt_etth1_96/" \
-	--patience=50 \
-	--clip_norm=1.0 \
-	--learning_rate=0.0001 \
-	--warmup_epochs=100 \
-	--tune_time2vec="True" \
-	--nr_of_seeds=10 \
-	--nr_of_epochs=10000 \
-	--mini_batch_size=128
+# python task/fine_tune.py \
+# 	--input_dir="./bin/preprocessed/ft_ETTh1_96_96/" \
+# 	--output_dir="./bin/models/ft_etth1_96_96_02/" \
+# 	--pre_trained_model_dir="./bin/models/pt_etth1_96/" \
+# 	--patience=50 \
+# 	--clip_norm=1.0 \
+# 	--learning_rate=0.0001 \
+# 	--warmup_epochs=100 \
+# 	--tune_time2vec="True" \
+# 	--nr_of_seeds=10 \
+# 	--nr_of_epochs=10000 \
+# 	--mini_batch_size=128
+
+# python task/pre_train.py \
+# 	--input_dir="./bin/preprocessed/pt_ETTh1_96" \
+# 	--output_dir="./bin/models/pt_etth1_96_02" \
+# 	--mask_rate=0.40 \
+# 	--mask_scalar=0.00 \
+# 	--mini_batch_size=128 \
+# 	--clip_norm=0.10 \
+# 	--l1_trend=0.0009069200356077791 \
+# 	--l2_trend=0.00011516902230932779 \
+# 	--l1_seasonality=6.986327036159758e-06 \
+# 	--l2_seasonality=1.844456834877414e-05 \
+# 	--l1_residual=0.0033743574546682815 \
+# 	--l2_residual=0.00048162281165686684 \
+# 	--nr_of_encoder_blocks=8 \
+# 	--nr_of_heads=2 \
+# 	--dropout_rate=0.1 \
+# 	--encoder_ffn_units=192 \
+# 	--embedding_dims=256 \
+# 	--projection_head_units=16 \
+# 	--warmup_steps=4000 \
+# 	--scale_factor=0.1 \
+# 	--mae_threshold_comp=0.16 \
+# 	--mae_threshold_tre=0.09 \
+# 	--mae_threshold_sea=0.07 \
+# 	--cl_margin=0.25 \
+# 	--patch_size=8 \
+# 	--prompt_pool_size=40 \
+# 	--nr_of_most_similar_prompts=7 \
+# 	--patience=20 \
+# 	--nr_of_seeds=10 \
+# 	--nr_of_epochs=10000

@@ -183,10 +183,6 @@ if __name__ == '__main__':
     nr_of_timesteps = ds_train.element_spec[0].shape[1]
     nr_of_covariates = ds_train.element_spec[0].shape[-1]
 
-    contrastive_learning_patches = int(nr_of_timesteps * (mask_rate))
-    contrastive_learning_patches = \
-        int(contrastive_learning_patches / patch_size)
-
     best_loss = np.inf
     for seed in range(nr_of_seeds):
         print(f'Trial: {seed + 1} / {nr_of_seeds}')
@@ -205,7 +201,6 @@ if __name__ == '__main__':
             mask_rate=mask_rate,
             mask_scalar=mask_scalar,
             nr_of_timesteps=nr_of_timesteps,
-            contrastive_learning_patches=contrastive_learning_patches,
             mae_threshold_comp=mae_threshold_comp,
             mae_threshold_tre=mae_threshold_tre,
             mae_threshold_sea=mae_threshold_sea,

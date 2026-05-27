@@ -566,7 +566,7 @@ class PreTraining(tf.keras.Model):
     def _compute_contrastive_losses(self, y_logits_anchor: tf.Tensor, y_logits_true: tf.Tensor, y_logits_false: tf.Tensor) -> tf.Tensor:
         distance_true = tf.reduce_sum(tf.square(y_logits_anchor - y_logits_true), -1)
         distance_false = tf.reduce_sum(tf.square(y_logits_anchor - y_logits_false), -1)
-        return tf.maximum(distance_true - distance_false + self.cl_margin, 0.0)
+        return tf.reduce_mean(tf.maximum(distance_true - distance_false + self.cl_margin, 0.0))
 
     def _update_contrastive_loss_trackers(self, loss_cl: tf.Tensor) -> None:
         self.loss_tracker_cl.update_state(loss_cl)
@@ -656,7 +656,7 @@ class PreTraining(tf.keras.Model):
         achieve_sea = tf.less_equal(mae_sea, self.mae_threshold_sea)
         achieve_cl = tf.logical_and(
             tf.greater(self.loss_tracker_cl.count, 0),
-            tf.equal(self.loss_tracker_cl.result(), 0.0))
+            tf.less_equal(self.loss_tracker_cl.result(), 1e-6))
 
         msk_autoenc_comp = tf.logical_not(achieve_comp)
 
@@ -1022,6 +1022,7 @@ class PreTraining(tf.keras.Model):
             return self.masked_autoencoder((tre_patch, sea_patch, res_patch, dates))
 
 
+@tf.keras.saving.register_keras_serializable()
 class PreTrainingWeightedLoss(PreTraining):
     '''
     PreTraining variant that combines all losses into a single weighted sum
@@ -1195,7 +1196,6 @@ def build_model(
     mask_rate: float,
     mask_scalar: float,
     nr_of_timesteps: int,
-    contrastive_learning_patches: int,
     mae_threshold_comp: float,
     mae_threshold_tre: float,
     mae_threshold_sea: float,
@@ -1223,6 +1223,14 @@ def build_model(
     w_cl: Optional[float] = None) -> Union[PreTraining, PreTrainingWeightedLoss]:
 
     nr_of_patches = nr_of_timesteps // patch_size
+    contrastive_learning_patches = int(nr_of_timesteps * mask_rate) // patch_size
+    nr_of_forecast_patches = nr_of_patches - contrastive_learning_patches
+    if nr_of_forecast_patches < 2:
+        raise ValueError(
+            f"Contrastive learning requires at least 2 forecast patches "
+            f"(nr_of_patches - contrastive_learning_patches >= 2), "
+            f"got {nr_of_forecast_patches} "
+            f"(nr_of_patches={nr_of_patches}, contrastive_learning_patches={contrastive_learning_patches})")
 
     revIn_tre = ReversibleInstanceNormalization(
         nr_of_covariates=nr_of_covariates,

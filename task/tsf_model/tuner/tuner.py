@@ -120,11 +120,6 @@ def build_model_to_tune(
             max_value=1.00,
             sampling='log')
 
-    # define model
-    contrastive_learning_patches = int(nr_of_timesteps * (MASK_RATE))
-    contrastive_learning_patches = \
-        int(contrastive_learning_patches / patch_size)
-
     model = build_model(
         nr_of_covariates=nr_of_covariates,
         patch_size=patch_size,
@@ -137,7 +132,6 @@ def build_model_to_tune(
         mask_rate=MASK_RATE,
         mask_scalar=MASK_SCALAR,
         nr_of_timesteps=nr_of_timesteps,
-        contrastive_learning_patches=contrastive_learning_patches,
         mae_threshold_comp=MAE_THRESHOLD_COMP,
         mae_threshold_tre=MAE_THRESHOLD_TRE,
         mae_threshold_sea=MAE_THRESHOLD_SEA,
