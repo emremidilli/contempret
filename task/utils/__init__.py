@@ -1,6 +1,3 @@
-from .arguments import (  # noqa: F401
-    get_args)
-
 from .metrics import (  # noqa: F401
     get_metrics)
 

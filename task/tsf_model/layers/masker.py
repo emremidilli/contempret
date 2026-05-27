@@ -4,10 +4,10 @@ import tensorflow as tf
 @tf.keras.saving.register_keras_serializable()
 class PatchMasker(tf.keras.layers.Layer):
 
-    def __init__(self, msk_scalar, **kwargs):
+    def __init__(self, mask_scalar, **kwargs):
         super().__init__(**kwargs)
 
-        self.msk_scalar = msk_scalar
+        self.mask_scalar = mask_scalar
         self.trainable = False
 
     def call(self, inputs):
@@ -31,9 +31,9 @@ class PatchMasker(tf.keras.layers.Layer):
 
         mask_condition = tf.expand_dims(masks, axis=-1)
 
-        y_tre = tf.add(tf.zeros_like(x_tre), self.msk_scalar)
-        y_sea = tf.add(tf.zeros_like(x_sea), self.msk_scalar)
-        y_res = tf.add(tf.zeros_like(x_res), self.msk_scalar)
+        y_tre = tf.add(tf.zeros_like(x_tre), self.mask_scalar)
+        y_sea = tf.add(tf.zeros_like(x_sea), self.mask_scalar)
+        y_res = tf.add(tf.zeros_like(x_res), self.mask_scalar)
 
         r_tre = tf.where(mask_condition, y_tre, x_tre)
         r_sea = tf.where(mask_condition, y_sea, x_sea)

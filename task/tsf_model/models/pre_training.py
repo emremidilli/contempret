@@ -320,7 +320,7 @@ class PreTraining(tf.keras.Model):
         contrastive_learning: ContrastiveLearning,
         nr_of_patches: int,
         mask_rate: float,
-        msk_scalar: float,
+        mask_scalar: float,
         nr_of_timesteps: int,
         contrastive_learning_patches: int,
         mae_threshold_comp: float,
@@ -344,7 +344,7 @@ class PreTraining(tf.keras.Model):
         self.contrastive_learning = contrastive_learning
         self.nr_of_patches = nr_of_patches
         self.mask_rate = mask_rate
-        self.msk_scalar = msk_scalar
+        self.mask_scalar = mask_scalar
         self.nr_of_timesteps = nr_of_timesteps
         self.contrastive_learning_patches = contrastive_learning_patches
         self.mae_threshold_comp = mae_threshold_comp
@@ -356,7 +356,7 @@ class PreTraining(tf.keras.Model):
         self.force_mae_sea = force_mae_sea
         self.force_cl = force_cl
 
-        self.patch_masker = PatchMasker(msk_scalar=msk_scalar)
+        self.patch_masker = PatchMasker(mask_scalar=mask_scalar)
         self.timestep_shifter = TimeStepShifter()
         self.timesteps_concatter = tf.keras.layers.Concatenate(axis=1)
 
@@ -409,7 +409,7 @@ class PreTraining(tf.keras.Model):
             'contrastive_learning': tf.keras.layers.serialize(self.contrastive_learning),
             'nr_of_patches': self.nr_of_patches,
             'mask_rate': self.mask_rate,
-            'msk_scalar': self.msk_scalar,
+            'mask_scalar': self.mask_scalar,
             'nr_of_timesteps': self.nr_of_timesteps,
             'contrastive_learning_patches': self.contrastive_learning_patches,
             'mae_threshold_comp': self.mae_threshold_comp,
@@ -654,6 +654,9 @@ class PreTraining(tf.keras.Model):
         achieve_comp = tf.less_equal(mae_comp, self.mae_threshold_comp)
         achieve_tre = tf.less_equal(mae_tre, self.mae_threshold_tre)
         achieve_sea = tf.less_equal(mae_sea, self.mae_threshold_sea)
+        achieve_cl = tf.logical_and(
+            tf.greater(self.loss_tracker_cl.count, 0),
+            tf.equal(self.loss_tracker_cl.result(), 0.0))
 
         msk_autoenc_comp = tf.logical_not(achieve_comp)
 
@@ -668,7 +671,7 @@ class PreTraining(tf.keras.Model):
                 achieve_tre
             ])
 
-        cl = tf.logical_not(tf.equal(self.force_cl, -1))
+        cl = tf.logical_not(achieve_cl)
         #############################################
 
         # introduce force to train
@@ -684,6 +687,10 @@ class PreTraining(tf.keras.Model):
         msk_autoenc_sea = tf.logical_or(
             msk_autoenc_sea,
             tf.equal(self.force_mae_sea, 1))
+
+        cl = tf.logical_or(
+            cl,
+            tf.equal(self.force_cl, 1))
         #############################################
 
         # introduce force to not train
@@ -699,6 +706,10 @@ class PreTraining(tf.keras.Model):
         msk_autoenc_sea = tf.logical_and(
             msk_autoenc_sea,
             tf.logical_not(tf.equal(self.force_mae_sea, -1)))
+
+        cl = tf.logical_and(
+            cl,
+            tf.logical_not(tf.equal(self.force_cl, -1)))
         #############################################
 
         tasks = tf.cond(
@@ -1028,7 +1039,7 @@ class PreTrainingWeightedLoss(PreTraining):
         contrastive_learning: ContrastiveLearning,
         nr_of_patches: int,
         mask_rate: float,
-        msk_scalar: float,
+        mask_scalar: float,
         nr_of_timesteps: int,
         contrastive_learning_patches: int,
         mae_threshold_comp: float,
@@ -1055,7 +1066,7 @@ class PreTrainingWeightedLoss(PreTraining):
             contrastive_learning=contrastive_learning,
             nr_of_patches=nr_of_patches,
             mask_rate=mask_rate,
-            msk_scalar=msk_scalar,
+            mask_scalar=mask_scalar,
             nr_of_timesteps=nr_of_timesteps,
             contrastive_learning_patches=contrastive_learning_patches,
             mae_threshold_comp=mae_threshold_comp,
@@ -1182,7 +1193,7 @@ def build_model(
     embedding_dims: int,
     projection_head_units: int,
     mask_rate: float,
-    msk_scalar: float,
+    mask_scalar: float,
     nr_of_timesteps: int,
     contrastive_learning_patches: int,
     mae_threshold_comp: float,
@@ -1274,7 +1285,7 @@ def build_model(
         contrastive_learning=contrastive_learning,
         nr_of_patches=nr_of_patches,
         mask_rate=mask_rate,
-        msk_scalar=msk_scalar,
+        mask_scalar=mask_scalar,
         nr_of_timesteps=nr_of_timesteps,
         contrastive_learning_patches=contrastive_learning_patches,
         mae_threshold_comp=mae_threshold_comp,
@@ -1313,12 +1324,61 @@ def compile_model(model: Union[PreTraining, PreTrainingWeightedLoss], clip_norm:
     return model
 
 
+class ThresholdEarlyStopping(tf.keras.callbacks.Callback):
+    def __init__(
+        self,
+        mae_threshold_comp: Optional[float],
+        mae_threshold_tre: Optional[float],
+        mae_threshold_sea: Optional[float],
+        patience: int):
+        super().__init__()
+        self.mae_threshold_comp = mae_threshold_comp
+        self.mae_threshold_tre = mae_threshold_tre
+        self.mae_threshold_sea = mae_threshold_sea
+        self.patience = patience
+        self.wait = 0
+        self.best = np.inf
+        self.best_weights = None
+
+    def on_train_begin(self, logs=None):
+        self.wait = 0
+        self.best = np.inf
+        self.best_weights = None
+
+    def _threshold_met(self, value: float, threshold: Optional[float]) -> bool:
+        return threshold is None or value <= threshold
+
+    def on_epoch_end(self, epoch, logs=None):
+        logs = logs or {}
+        thresholds_met = (
+            self._threshold_met(logs.get('mae_composed', np.inf), self.mae_threshold_comp) and
+            self._threshold_met(logs.get('mae_tre', np.inf),      self.mae_threshold_tre) and
+            self._threshold_met(logs.get('mae_sea', np.inf),      self.mae_threshold_sea))
+
+        if not thresholds_met:
+            return
+
+        current = logs.get('val_mae_composed', np.inf)
+        if current < self.best:
+            self.best = current
+            self.wait = 0
+            self.best_weights = self.model.get_weights()
+        else:
+            self.wait += 1
+            if self.wait >= self.patience:
+                self.model.stop_training = True
+                if self.best_weights is not None:
+                    self.model.set_weights(self.best_weights)
+
+
 def get_callbacks(
     embedding_dims: int,
     warmup_steps: int,
     scale_factor: float,
     patience: int,
-    warmup_epochs_early_stopping: int) -> list:
+    mae_threshold_comp: Optional[float],
+    mae_threshold_tre: Optional[float],
+    mae_threshold_sea: Optional[float]) -> list:
 
     learning_rate_callback = LearningRateCallback(
         d_model=embedding_dims,
@@ -1329,11 +1389,11 @@ def get_callbacks(
 
     terminate_on_nan_callback = tf.keras.callbacks.TerminateOnNaN()
 
-    early_stopping = tf.keras.callbacks.EarlyStopping(
-        monitor='val_mae_composed',
-        patience=patience,
-        start_from_epoch=warmup_epochs_early_stopping,
-        restore_best_weights=True)
+    early_stopping = ThresholdEarlyStopping(
+        mae_threshold_comp=mae_threshold_comp,
+        mae_threshold_tre=mae_threshold_tre,
+        mae_threshold_sea=mae_threshold_sea,
+        patience=patience)
 
     timing_callback = TimingCallback()
 

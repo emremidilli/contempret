@@ -135,7 +135,7 @@ def build_model_to_tune(
         embedding_dims=embedding_dims,
         projection_head_units=projection_head_units,
         mask_rate=MASK_RATE,
-        msk_scalar=MASK_SCALAR,
+        mask_scalar=MASK_SCALAR,
         nr_of_timesteps=nr_of_timesteps,
         contrastive_learning_patches=contrastive_learning_patches,
         mae_threshold_comp=MAE_THRESHOLD_COMP,

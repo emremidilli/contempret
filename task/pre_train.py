@@ -1,3 +1,5 @@
+import argparse
+import sys
 import numpy as np
 
 import os
@@ -10,18 +12,77 @@ from tsf_model.models.pre_training import (
     get_callbacks)
 
 from utils import (
-    get_args,
     get_metrics,
     predict_pre_train,
     read_json,
     save_json)
 
 
+def _get_args():
+    parser = argparse.ArgumentParser(description="Pre-train a foundation model")
+
+    parser.add_argument("--input_dir", type=str, default="test")
+    parser.add_argument("--prompt_dir", type=str, default=None)
+    parser.add_argument("--output_dir", type=str, default="test")
+    parser.add_argument("--mini_batch_size", type=int, default=128)
+    parser.add_argument("--nr_of_epochs", type=int, default=5)
+    parser.add_argument("--patience", type=int, default=5)
+    parser.add_argument("--nr_of_seeds", type=int, default=1)
+    parser.add_argument("--clip_norm", type=float, default=1.0)
+    parser.add_argument("--warmup_steps", type=int, default=4000)
+    parser.add_argument("--scale_factor", type=float, default=1.0)
+    parser.add_argument("--l1_trend", type=float, default=0.01)
+    parser.add_argument("--l2_trend", type=float, default=0.01)
+    parser.add_argument("--l1_seasonality", type=float, default=0.01)
+    parser.add_argument("--l2_seasonality", type=float, default=0.01)
+    parser.add_argument("--l1_residual", type=float, default=0.01)
+    parser.add_argument("--l2_residual", type=float, default=0.01)
+    parser.add_argument("--nr_of_encoder_blocks", type=int, default=1)
+    parser.add_argument("--nr_of_heads", type=int, default=1)
+    parser.add_argument("--encoder_ffn_units", type=int, default=8)
+    parser.add_argument("--embedding_dims", type=int, default=8)
+    parser.add_argument("--projection_head_units", type=int, default=8)
+    parser.add_argument("--dropout_rate", type=float, default=0.10)
+    parser.add_argument("--mask_scalar", type=float, default=0.00)
+    parser.add_argument("--mask_rate", type=float, default=0.40)
+    parser.add_argument("--mae_threshold_comp", type=float, default=None)
+    parser.add_argument("--mae_threshold_tre", type=float, default=None)
+    parser.add_argument("--mae_threshold_sea", type=float, default=None)
+    parser.add_argument("--cl_margin", type=float, default=0.25)
+    parser.add_argument("--patch_size", type=int, default=4)
+    parser.add_argument("--prompt_pool_size", type=int, default=2)
+    parser.add_argument("--nr_of_most_similar_prompts", type=int, default=1)
+    parser.add_argument("--force_mae_comp", type=int,
+                        choices=[-1, 0, 1], default=0)
+    parser.add_argument("--force_mae_tre", type=int,
+                        choices=[-1, 0, 1], default=0)
+    parser.add_argument("--force_mae_sea", type=int,
+                        choices=[-1, 0, 1], default=0)
+    parser.add_argument("--force_cl", type=int,
+                        choices=[-1, 0, 1], default=0)
+    parser.add_argument("--save_only_light_artifacts",
+                        type=eval, default="False")
+    parser.add_argument("--prefer_dense_to_time2vec",
+                        type=eval, default="False")
+    parser.add_argument("--w_comp", type=float, default=None)
+    parser.add_argument("--w_tre", type=float, default=None)
+    parser.add_argument("--w_sea", type=float, default=None)
+    parser.add_argument("--w_cl", type=float, default=None)
+
+    try:
+        args = parser.parse_args()
+    except Exception:
+        parser.print_help()
+        sys.exit(0)
+
+    return args
+
+
 if __name__ == '__main__':
     '''Pre-trains a foundation model.'''
 
     # parse the args
-    args = get_args()
+    args = _get_args()
 
     input_dir = args.input_dir
     prompt_dir = args.prompt_dir
@@ -41,7 +102,7 @@ if __name__ == '__main__':
     dropout_rate = args.dropout_rate
     encoder_ffn_units = args.encoder_ffn_units
     embedding_dims = args.embedding_dims
-    projection_head = args.projection_head
+    projection_head_units = args.projection_head_units
     warmup_steps = args.warmup_steps
     scale_factor = args.scale_factor
     mae_threshold_comp = args.mae_threshold_comp
@@ -56,7 +117,6 @@ if __name__ == '__main__':
     force_mae_tre = args.force_mae_tre
     force_mae_sea = args.force_mae_sea
     force_cl = args.force_cl
-    warmup_epochs_early_stopping = args.warmup_epochs_early_stopping
     save_only_light_artifacts = args.save_only_light_artifacts
     prefer_dense_to_time2vec = args.prefer_dense_to_time2vec
     nr_of_seeds = args.nr_of_seeds
@@ -141,9 +201,9 @@ if __name__ == '__main__':
             dropout_rate=dropout_rate,
             encoder_ffn_units=encoder_ffn_units,
             embedding_dims=embedding_dims,
-            projection_head_units=projection_head,
+            projection_head_units=projection_head_units,
             mask_rate=mask_rate,
-            msk_scalar=mask_scalar,
+            mask_scalar=mask_scalar,
             nr_of_timesteps=nr_of_timesteps,
             contrastive_learning_patches=contrastive_learning_patches,
             mae_threshold_comp=mae_threshold_comp,
@@ -179,7 +239,9 @@ if __name__ == '__main__':
             warmup_steps=warmup_steps,
             scale_factor=scale_factor,
             patience=patience,
-            warmup_epochs_early_stopping=warmup_epochs_early_stopping)
+            mae_threshold_comp=mae_threshold_comp,
+            mae_threshold_tre=mae_threshold_tre,
+            mae_threshold_sea=mae_threshold_sea)
 
         # fit the model
         history = model.fit(
@@ -206,7 +268,9 @@ if __name__ == '__main__':
         warmup_steps=warmup_steps,
         scale_factor=scale_factor,
         patience=patience,
-        warmup_epochs_early_stopping=warmup_epochs_early_stopping)
+        mae_threshold_comp=mae_threshold_comp,
+        mae_threshold_tre=mae_threshold_tre,
+        mae_threshold_sea=mae_threshold_sea)
 
     # fit the model
     history = model.fit(

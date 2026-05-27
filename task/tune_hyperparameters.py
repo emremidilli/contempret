@@ -1,4 +1,6 @@
+import argparse
 import json
+import sys
 
 import keras_tuner as kt
 
@@ -8,12 +10,35 @@ import tensorflow as tf
 
 from tsf_model.tuner.tuner import build_model_to_tune, Tuner
 
-from utils import get_args
+
+def _get_args():
+    parser = argparse.ArgumentParser(
+        description="Tune hyperparameters of a foundation model")
+
+    parser.add_argument("--input_dir", type=str, default="test")
+    parser.add_argument("--output_dir", type=str, default="test")
+    parser.add_argument("--mini_batch_size", type=int, default=128)
+    parser.add_argument("--max_epochs", type=int, default=5)
+    parser.add_argument("--executions_per_trial", type=int, default=1)
+    parser.add_argument("--factor", type=int, default=3)
+    parser.add_argument(
+        "--training_mode",
+        choices=["sequential", "weighted"],
+        default="sequential")
+
+    try:
+        args = parser.parse_args()
+    except Exception:
+        parser.print_help()
+        sys.exit(0)
+
+    return args
+
 
 if __name__ == '__main__':
     '''Tunes the hyperparameters of foundation model.'''
     # parse the args
-    args = get_args()
+    args = _get_args()
 
     input_dir = args.input_dir
     output_dir = args.output_dir

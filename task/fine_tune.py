@@ -1,4 +1,6 @@
+import argparse
 import numpy as np
+import sys
 
 import os
 
@@ -12,7 +14,6 @@ from tsf_model.models.fine_tuning import (
     TimeSeriesClassifier)
 
 from utils import (
-    get_args,
     get_metrics,
     predict_fine_tune,
     RamCleaner,
@@ -20,10 +21,38 @@ from utils import (
     save_npy)
 
 
+def _get_args():
+    parser = argparse.ArgumentParser(description="Fine-tune a pre-trained model")
+
+    parser.add_argument("--input_dir", type=str, default="test")
+    parser.add_argument("--output_dir", type=str, default="test")
+    parser.add_argument("--pre_trained_model_dir", type=str, default="test")
+    parser.add_argument("--mini_batch_size", type=int, default=128)
+    parser.add_argument("--nr_of_epochs", type=int, default=5)
+    parser.add_argument("--patience", type=int, default=5)
+    parser.add_argument("--warmup_epochs_early_stopping", type=int, default=10)
+    parser.add_argument("--nr_of_seeds", type=int, default=1)
+    parser.add_argument("--learning_rate", type=float, default=1e-3)
+    parser.add_argument("--clip_norm", type=float, default=1.0)
+    parser.add_argument("--task_type", type=str,
+                        choices=["sequence_prediction",
+                                 "time_series_classification"],
+                        default="sequence_prediction")
+    parser.add_argument("--tune_time2vec", type=eval, default="False")
+
+    try:
+        args = parser.parse_args()
+    except Exception:
+        parser.print_help()
+        sys.exit(0)
+
+    return args
+
+
 if __name__ == '__main__':
     '''Fine tunes a pre-trained model.'''
     # parse args
-    args = get_args()
+    args = _get_args()
     print(args)
 
     input_dir = args.input_dir

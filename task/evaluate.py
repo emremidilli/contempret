@@ -1,8 +1,26 @@
+import argparse
+import sys
+
 import tensorflow as tf
 
-from utils import (
-    get_args,
-    save_json)
+from utils import save_json
+
+
+def _get_args():
+    parser = argparse.ArgumentParser(description="Evaluate a fine-tuned model")
+
+    parser.add_argument("--input_dir", type=str, default="test")
+    parser.add_argument("--model_dir", type=str, default="test")
+    parser.add_argument("--output_dir", type=str, default="test")
+    parser.add_argument("--mini_batch_size", type=int, default=128)
+
+    try:
+        args = parser.parse_args()
+    except Exception:
+        parser.print_help()
+        sys.exit(0)
+
+    return args
 
 
 if __name__ == '__main__':
@@ -11,7 +29,7 @@ if __name__ == '__main__':
     It requires input dataset to have both input features
     as well as ground truth.
     '''
-    args = get_args()
+    args = _get_args()
     print(args)
     input_dir = args.input_dir
     model_dir = args.model_dir

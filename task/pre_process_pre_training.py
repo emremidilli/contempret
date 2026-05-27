@@ -1,4 +1,6 @@
+import argparse
 import numpy as np
+import sys
 
 import os
 
@@ -6,9 +8,26 @@ import tensorflow as tf
 
 from tsf_model.models.pre_processing import InputPreProcessor
 
-from utils import (
-    get_args,
-    read_npy)
+from utils import read_npy
+
+
+def _get_args():
+    parser = argparse.ArgumentParser(
+        description="Pre-process datasets for pre-training")
+
+    parser.add_argument("--input_dir", type=str, default="test")
+    parser.add_argument("--output_dir", type=str, default="test")
+    parser.add_argument("--pool_size_trend", type=int, default=24)
+    parser.add_argument("--sigma", type=float, default=1.96)
+    parser.add_argument("--use_timestamp", type=eval, default="True")
+
+    try:
+        args = parser.parse_args()
+    except Exception:
+        parser.print_help()
+        sys.exit(0)
+
+    return args
 
 
 if __name__ == '__main__':
@@ -18,7 +37,7 @@ if __name__ == '__main__':
     Datasets might be multivariate.
     Saves final dataset and pre-processor.
     '''
-    args = get_args()
+    args = _get_args()
     print(args)
     input_dir = args.input_dir
     output_dir = args.output_dir
