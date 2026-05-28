@@ -513,8 +513,8 @@ class PreTraining(tf.keras.Model):
 
     def _compute_reconstruction_losses(
         self,
-        y_pred_tre: tf.Tensor, y_pred_sea: tf.Tensor, y_pred_res: tf.Tensor, y_pred_composed: tf.Tensor,
-        anchor_tre: tf.Tensor, anchor_sea: tf.Tensor, anchor_res: tf.Tensor, anchor_composed: tf.Tensor,
+        y_pred_tre: tf.Tensor, y_pred_sea: tf.Tensor, y_pred_composed: tf.Tensor,
+        anchor_tre: tf.Tensor, anchor_sea: tf.Tensor, anchor_composed: tf.Tensor,
         mask: tf.Tensor, loss_fn: Callable) -> Tuple[tf.Tensor, tf.Tensor, tf.Tensor]:
         loss_comp = self.calculate_masked_loss(
             y_pred=y_pred_composed, y_true=anchor_composed, mask=mask, loss_fn=loss_fn)
@@ -775,8 +775,8 @@ class PreTraining(tf.keras.Model):
             self(data, training=True, mask=mask, task="reconstruction")
 
         mae_comp, mae_tre, mae_sea = self._compute_reconstruction_losses(
-            y_pred_tre, y_pred_sea, y_pred_res, y_pred_composed,
-            anchor_tre, anchor_sea, anchor_res, anchor_composed,
+            y_pred_tre, y_pred_sea, y_pred_composed,
+            anchor_tre, anchor_sea, anchor_composed,
             mask, loss_fn=tf.keras.losses.mean_absolute_error)
 
         tasks_to_train = self.get_tasks_to_train(mae_comp, mae_tre, mae_sea)
@@ -790,8 +790,8 @@ class PreTraining(tf.keras.Model):
 
                 # compute the loss values
                 loss_mae_comp, loss_mae_tre, loss_mae_sea = self._compute_reconstruction_losses(
-                    y_pred_tre, y_pred_sea, y_pred_res, y_pred_composed,
-                    anchor_tre, anchor_sea, anchor_res, anchor_composed,
+                    y_pred_tre, y_pred_sea, y_pred_composed,
+                    anchor_tre, anchor_sea, anchor_composed,
                     mask, loss_fn=tf.keras.losses.mean_squared_error)
 
             # compute gradients
@@ -817,8 +817,8 @@ class PreTraining(tf.keras.Model):
 
                 # compute the loss values
                 loss_mae_comp, loss_mae_tre, loss_mae_sea = self._compute_reconstruction_losses(
-                    y_pred_tre, y_pred_sea, y_pred_res, y_pred_composed,
-                    anchor_tre, anchor_sea, anchor_res, anchor_composed,
+                    y_pred_tre, y_pred_sea, y_pred_composed,
+                    anchor_tre, anchor_sea, anchor_composed,
                     mask, loss_fn=tf.keras.losses.mean_squared_error)
 
             # compute gradients
@@ -842,8 +842,8 @@ class PreTraining(tf.keras.Model):
 
                 # compute the loss values
                 loss_mae_comp, loss_mae_tre, loss_mae_sea = self._compute_reconstruction_losses(
-                    y_pred_tre, y_pred_sea, y_pred_res, y_pred_composed,
-                    anchor_tre, anchor_sea, anchor_res, anchor_composed,
+                    y_pred_tre, y_pred_sea, y_pred_composed,
+                    anchor_tre, anchor_sea, anchor_composed,
                     mask, loss_fn=tf.keras.losses.mean_squared_error)
 
             # compute gradients
@@ -943,8 +943,8 @@ class PreTraining(tf.keras.Model):
             self(data, training=False, mask=mask, task="reconstruction")
 
         loss_mae_comp, loss_mae_tre, loss_mae_sea = self._compute_reconstruction_losses(
-            y_pred_tre, y_pred_sea, y_pred_res, y_pred_composed,
-            anchor_tre, anchor_sea, anchor_res, anchor_composed,
+            y_pred_tre, y_pred_sea, y_pred_composed,
+            anchor_tre, anchor_sea, anchor_composed,
             mask, loss_fn=tf.keras.losses.mean_squared_error)
 
         self._update_reconstruction_loss_trackers(loss_mae_comp, loss_mae_tre, loss_mae_sea)
@@ -1131,8 +1131,8 @@ class PreTrainingWeightedLoss(PreTraining):
                 self(data, training=True, mask=cl_mask, task="contrastive")
 
             loss_mae_comp, loss_mae_tre, loss_mae_sea = self._compute_reconstruction_losses(
-                y_pred_tre, y_pred_sea, y_pred_res, y_pred_composed,
-                anchor_tre, anchor_sea, anchor_res, anchor_composed,
+                y_pred_tre, y_pred_sea, y_pred_composed,
+                anchor_tre, anchor_sea, anchor_composed,
                 mask, loss_fn=tf.keras.losses.mean_squared_error)
 
             loss_cl = self._compute_contrastive_losses(y_logits_anchor, y_logits_true, y_logits_false)
