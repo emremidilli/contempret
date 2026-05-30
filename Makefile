@@ -582,9 +582,9 @@ train_pt_etth_96_wo_masked_autoencoder: run
 		--projection_head_units=16 \
 		--warmup_steps=4000 \
 		--scale_factor=0.1 \
-		--mae_threshold_comp=0.16 \
-		--mae_threshold_tre=0.09 \
-		--mae_threshold_sea=0.07 \
+		--mae_threshold_comp=10.0 \
+		--mae_threshold_tre=10.0 \
+		--mae_threshold_sea=10.0 \
 		--cl_margin=0.25 \
 		--patch_size=4 \
 		--prompt_pool_size=40 \
@@ -596,6 +596,94 @@ train_pt_etth_96_wo_masked_autoencoder: run
 		--force_mae_tre="-1" \
 		--force_mae_sea="-1" \
 		--force_cl="1"
+
+train_ft_etth1_96_96_wo_masked_autoencoder: run
+	$(PYTHON) task/fine_tune.py \
+		--input_dir="./bin/preprocessed/ft_ETTh1_96_96/" \
+		--output_dir="./bin/models/ft_etth1_96_96_wo_masked_autoencoder/" \
+		--pre_trained_model_dir="./bin/models/pt_etth_96_wo_masked_autoencoder/" \
+		--patience=10 \
+		--clip_norm=0.10 \
+		--learning_rate=0.00001 \
+		--warmup_epochs=1 \
+		--tune_time2vec="True" \
+		--nr_of_seeds=10 \
+		--nr_of_epochs=10000 \
+		--mini_batch_size=128
+
+
+train_ft_etth2_96_96_wo_masked_autoencoder: run
+	$(PYTHON) task/fine_tune.py \
+		--input_dir="./bin/preprocessed/ft_ETTh2_96_96/" \
+		--output_dir="./bin/models/ft_etth2_96_96_wo_masked_autoencoder/" \
+		--pre_trained_model_dir="./bin/models/pt_etth_96_wo_masked_autoencoder/" \
+		--patience=10 \
+		--clip_norm=0.10 \
+		--learning_rate=0.00001 \
+		--warmup_epochs=1 \
+		--tune_time2vec="True" \
+		--nr_of_seeds=10 \
+		--nr_of_epochs=10000 \
+		--mini_batch_size=128
+
+
+train_ft_etth1_96_96_wo_prompt: run
+	$(PYTHON) task/fine_tune.py \
+		--input_dir="./bin/preprocessed/ft_ETTh1_96_96/" \
+		--output_dir="./bin/models/ft_etth1_96_96_wo_prompt/" \
+		--pre_trained_model_dir="./bin/models/pt_etth_96_wo_prompt/" \
+		--patience=10 \
+		--clip_norm=0.10 \
+		--learning_rate=0.00001 \
+		--warmup_epochs=1 \
+		--tune_time2vec="True" \
+		--nr_of_seeds=10 \
+		--nr_of_epochs=10000 \
+		--mini_batch_size=128
+
+
+train_ft_etth2_96_96_wo_prompt: run
+	$(PYTHON) task/fine_tune.py \
+		--input_dir="./bin/preprocessed/ft_ETTh2_96_96/" \
+		--output_dir="./bin/models/ft_etth2_96_96_wo_prompt/" \
+		--pre_trained_model_dir="./bin/models/pt_etth_96_wo_prompt/" \
+		--patience=10 \
+		--clip_norm=0.10 \
+		--learning_rate=0.00001 \
+		--warmup_epochs=1 \
+		--tune_time2vec="True" \
+		--nr_of_seeds=10 \
+		--nr_of_epochs=10000 \
+		--mini_batch_size=128
+
+train_ft_etth1_96_96_wo_contrastive_learning: run
+	$(PYTHON) task/fine_tune.py \
+		--input_dir="./bin/preprocessed/ft_ETTh1_96_96/" \
+		--output_dir="./bin/models/ft_etth1_96_96_wo_contrastive_learning/" \
+		--pre_trained_model_dir="./bin/models/pt_etth_96_wo_contrastive_learning/" \
+		--patience=10 \
+		--clip_norm=0.10 \
+		--learning_rate=0.00001 \
+		--warmup_epochs=1 \
+		--tune_time2vec="True" \
+		--nr_of_seeds=10 \
+		--nr_of_epochs=10000 \
+		--mini_batch_size=128
+
+
+train_ft_etth2_96_96_wo_contrastive_learning: run
+	$(PYTHON) task/fine_tune.py \
+		--input_dir="./bin/preprocessed/ft_ETTh2_96_96/" \
+		--output_dir="./bin/models/ft_etth2_96_96_wo_contrastive_learning/" \
+		--pre_trained_model_dir="./bin/models/pt_etth_96_wo_contrastive_learning/" \
+		--patience=10 \
+		--clip_norm=0.10 \
+		--learning_rate=0.00001 \
+		--warmup_epochs=1 \
+		--tune_time2vec="True" \
+		--nr_of_seeds=10 \
+		--nr_of_epochs=10000 \
+		--mini_batch_size=128
 
 train_ft_etth1_96_96_wo_sequential: run
 	$(PYTHON) task/fine_tune.py \
@@ -616,6 +704,35 @@ train_ft_etth2_96_96_wo_sequential: run
 		--input_dir="./bin/preprocessed/ft_ETTh2_96_96/" \
 		--output_dir="./bin/models/ft_etth2_96_96_wo_sequential/" \
 		--pre_trained_model_dir="./bin/models/pt_etth_96_wo_sequential/" \
+		--patience=10 \
+		--clip_norm=0.10 \
+		--learning_rate=0.00001 \
+		--warmup_epochs=1 \
+		--tune_time2vec="True" \
+		--nr_of_seeds=10 \
+		--nr_of_epochs=10000 \
+		--mini_batch_size=128
+
+train_ft_etth1_96_96_wo_time2vec: run
+	$(PYTHON) task/fine_tune.py \
+		--input_dir="./bin/preprocessed/ft_ETTh1_96_96/" \
+		--output_dir="./bin/models/ft_etth1_96_96_wo_time2vec/" \
+		--pre_trained_model_dir="./bin/models/pt_etth_96_wo_time2vec/" \
+		--patience=10 \
+		--clip_norm=0.10 \
+		--learning_rate=0.00001 \
+		--warmup_epochs=1 \
+		--tune_time2vec="True" \
+		--nr_of_seeds=10 \
+		--nr_of_epochs=10000 \
+		--mini_batch_size=128
+
+
+train_ft_etth2_96_96_wo_time2vec: run
+	$(PYTHON) task/fine_tune.py \
+		--input_dir="./bin/preprocessed/ft_ETTh2_96_96/" \
+		--output_dir="./bin/models/ft_etth2_96_96_wo_time2vec/" \
+		--pre_trained_model_dir="./bin/models/pt_etth_96_wo_time2vec/" \
 		--patience=10 \
 		--clip_norm=0.10 \
 		--learning_rate=0.00001 \

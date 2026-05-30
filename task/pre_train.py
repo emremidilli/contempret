@@ -279,7 +279,7 @@ if __name__ == '__main__':
     # predict
     actual_train, pred_train, mask_train = predict_pre_train(
         model=model,
-        ds=ds_train)z
+        ds=ds_train)
     actual_val, pred_val, mask_val = predict_pre_train(
         model=model,
         ds=ds_val)
