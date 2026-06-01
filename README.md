@@ -10,6 +10,17 @@ docker exec -it contempret-app_contempret-1 bash
 
 ## Experiments
 
+## Pre-Training
+
+### Stopping Criteria
+
+| model_name | composed | tred | seasonality |
+|:----:|:-----:|:-----:|:-----:|
+| pt_etth_96 | 0.16 | 0.09 | 0.07 |
+| pt_etth_192 | 0.19 | 0.14 | 0.08 |
+| pt_etth_384 | --- | --- | --- |
+| pt_etth_768 | --- | --- | --- |
+
 ### Ablation Studies
 
 #### W/O Sequential Training

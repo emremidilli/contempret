@@ -193,6 +193,15 @@ class Tuner(kt.Hyperband):
         kwargs['callbacks'] = get_callbacks(hp)
         return super().run_trial(trial, *args, **kwargs)
 
+    def _callback_list(self, trial):
+        return []  # skip ModelCheckpoint callback to avoid filling disk
+
+    def save_model(self, trial_id, model, step=0):
+        pass  # skip end-of-trial checkpoint to avoid filling disk
+
+    def load_model(self, trial):
+        return self.hypermodel.build(trial.hyperparameters)
+
     def on_trial_end(self, trial):
         super().on_trial_end(trial)
         tf.keras.backend.clear_session()

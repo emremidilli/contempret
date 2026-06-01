@@ -201,6 +201,8 @@ hp_tune_pt_etth_384: run
 		--factor=3 \
 		--training_mode="sequential"
 
+
+
 hp_tune_pt_etth_768: run
 	$(PYTHON) task/tune_hyperparameters.py \
 		--input_dir="./bin/preprocessed/pt_etth_768" \
@@ -210,6 +212,7 @@ hp_tune_pt_etth_768: run
 		--executions_per_trial=1 \
 		--factor=3 \
 		--training_mode="sequential"
+
 
 train_pt_etth_96: run
 	$(PYTHON) task/pre_train.py \
@@ -733,6 +736,97 @@ train_ft_etth2_96_96_wo_time2vec: run
 		--input_dir="./bin/preprocessed/ft_ETTh2_96_96/" \
 		--output_dir="./bin/models/ft_etth2_96_96_wo_time2vec/" \
 		--pre_trained_model_dir="./bin/models/pt_etth_96_wo_time2vec/" \
+		--patience=10 \
+		--clip_norm=0.10 \
+		--learning_rate=0.00001 \
+		--warmup_epochs=1 \
+		--tune_time2vec="True" \
+		--nr_of_seeds=10 \
+		--nr_of_epochs=10000 \
+		--mini_batch_size=128
+
+# ── Baltic Energy ───────────────────────────────────────────────────────────────────
+
+preprocess_ft_baltic_energy_96_96: ID = ft_baltic_energy_96_96
+preprocess_ft_baltic_energy_96_96:
+	$(PIPELINE_PREPROCESS_FINE_TUNING)
+
+train_ft_baltic_energy_96_96: run
+	$(PYTHON) task/fine_tune.py \
+		--input_dir="./bin/preprocessed/ft_baltic_energy_96_96/" \
+		--output_dir="./bin/models/ft_baltic_energy_96_96/" \
+		--pre_trained_model_dir="./bin/models/pt_etth_96/" \
+		--patience=10 \
+		--clip_norm=0.10 \
+		--learning_rate=0.00001 \
+		--warmup_epochs=1 \
+		--tune_time2vec="True" \
+		--nr_of_seeds=10 \
+		--nr_of_epochs=10000 \
+		--mini_batch_size=128
+
+train_ft_baltic_energy_96_96_wo_prompt: run
+	$(PYTHON) task/fine_tune.py \
+		--input_dir="./bin/preprocessed/ft_baltic_energy_96_96/" \
+		--output_dir="./bin/models/ft_baltic_energy_96_96_wo_prompt/" \
+		--pre_trained_model_dir="./bin/models/pt_etth_96_wo_prompt/" \
+		--patience=10 \
+		--clip_norm=0.10 \
+		--learning_rate=0.00001 \
+		--warmup_epochs=1 \
+		--tune_time2vec="True" \
+		--nr_of_seeds=10 \
+		--nr_of_epochs=10000 \
+		--mini_batch_size=128
+
+train_ft_baltic_energy_96_96_wo_time2vec: run
+	$(PYTHON) task/fine_tune.py \
+		--input_dir="./bin/preprocessed/ft_baltic_energy_96_96/" \
+		--output_dir="./bin/models/ft_baltic_energy_96_96_wo_time2vec/" \
+		--pre_trained_model_dir="./bin/models/pt_etth_96_wo_time2vec/" \
+		--patience=10 \
+		--clip_norm=0.10 \
+		--learning_rate=0.00001 \
+		--warmup_epochs=1 \
+		--tune_time2vec="True" \
+		--nr_of_seeds=10 \
+		--nr_of_epochs=10000 \
+		--mini_batch_size=128
+
+
+train_ft_baltic_energy_96_96_wo_masked_autoencoder: run
+	$(PYTHON) task/fine_tune.py \
+		--input_dir="./bin/preprocessed/ft_baltic_energy_96_96/" \
+		--output_dir="./bin/models/ft_baltic_energy_96_96_wo_masked_autoencoder/" \
+		--pre_trained_model_dir="./bin/models/pt_etth_96_wo_masked_autoencoder/" \
+		--patience=10 \
+		--clip_norm=0.10 \
+		--learning_rate=0.00001 \
+		--warmup_epochs=1 \
+		--tune_time2vec="True" \
+		--nr_of_seeds=10 \
+		--nr_of_epochs=10000 \
+		--mini_batch_size=128
+
+train_ft_baltic_energy_96_96_wo_contrastive_learning: run
+	$(PYTHON) task/fine_tune.py \
+		--input_dir="./bin/preprocessed/ft_baltic_energy_96_96/" \
+		--output_dir="./bin/models/ft_baltic_energy_96_96_wo_contrastive_learning/" \
+		--pre_trained_model_dir="./bin/models/pt_etth_96_wo_contrastive_learning/" \
+		--patience=10 \
+		--clip_norm=0.10 \
+		--learning_rate=0.00001 \
+		--warmup_epochs=1 \
+		--tune_time2vec="True" \
+		--nr_of_seeds=10 \
+		--nr_of_epochs=10000 \
+		--mini_batch_size=128
+
+train_ft_baltic_energy_96_96_wo_sequential: run
+	$(PYTHON) task/fine_tune.py \
+		--input_dir="./bin/preprocessed/ft_baltic_energy_96_96/" \
+		--output_dir="./bin/models/ft_baltic_energy_96_96_wo_sequential/" \
+		--pre_trained_model_dir="./bin/models/pt_etth_96_wo_sequential/" \
 		--patience=10 \
 		--clip_norm=0.10 \
 		--learning_rate=0.00001 \
