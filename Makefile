@@ -201,8 +201,6 @@ hp_tune_pt_etth_384: run
 		--factor=3 \
 		--training_mode="sequential"
 
-
-
 hp_tune_pt_etth_768: run
 	$(PYTHON) task/tune_hyperparameters.py \
 		--input_dir="./bin/preprocessed/pt_etth_768" \
@@ -212,7 +210,6 @@ hp_tune_pt_etth_768: run
 		--executions_per_trial=1 \
 		--factor=3 \
 		--training_mode="sequential"
-
 
 train_pt_etth_96: run
 	$(PYTHON) task/pre_train.py \
@@ -241,6 +238,105 @@ train_pt_etth_96: run
 		--mae_threshold_sea=0.07 \
 		--cl_margin=0.25 \
 		--patch_size=4 \
+		--prompt_pool_size=40 \
+		--nr_of_most_similar_prompts=7 \
+		--patience=20 \
+		--nr_of_seeds=10 \
+		--nr_of_epochs=10000
+
+train_pt_etth_192: run
+	$(PYTHON) task/pre_train.py \
+		--input_dir="./bin/preprocessed/pt_etth_192" \
+		--output_dir="./bin/models/pt_etth_192" \
+		--mask_rate=0.40 \
+		--mask_scalar=0.00 \
+		--mini_batch_size=64 \
+		--clip_norm=0.10 \
+		--l1_trend=0.0009069200356077791 \
+		--l2_trend=0.00011516902230932779 \
+		--l1_seasonality=6.986327036159758e-06 \
+		--l2_seasonality=1.844456834877414e-05 \
+		--l1_residual=0.0033743574546682815 \
+		--l2_residual=0.00048162281165686684 \
+		--nr_of_encoder_blocks=8 \
+		--nr_of_heads=2 \
+		--dropout_rate=0.1 \
+		--encoder_ffn_units=192 \
+		--embedding_dims=256 \
+		--projection_head_units=16 \
+		--warmup_steps=4000 \
+		--scale_factor=0.1 \
+		--mae_threshold_comp=0.19 \
+		--mae_threshold_tre=0.14 \
+		--mae_threshold_sea=0.08 \
+		--cl_margin=0.25 \
+		--patch_size=8 \
+		--prompt_pool_size=40 \
+		--nr_of_most_similar_prompts=7 \
+		--patience=20 \
+		--nr_of_seeds=10 \
+		--nr_of_epochs=10000
+
+train_pt_etth_384: run
+	$(PYTHON) task/pre_train.py \
+		--input_dir="./bin/preprocessed/pt_etth_384" \
+		--output_dir="./bin/models/pt_etth_384" \
+		--mask_rate=0.40 \
+		--mask_scalar=0.00 \
+		--mini_batch_size=128 \
+		--clip_norm=0.10 \
+		--l1_trend=0.0009069200356077791 \
+		--l2_trend=0.00011516902230932779 \
+		--l1_seasonality=6.986327036159758e-06 \
+		--l2_seasonality=1.844456834877414e-05 \
+		--l1_residual=0.0033743574546682815 \
+		--l2_residual=0.00048162281165686684 \
+		--nr_of_encoder_blocks=8 \
+		--nr_of_heads=2 \
+		--dropout_rate=0.1 \
+		--encoder_ffn_units=192 \
+		--embedding_dims=256 \
+		--projection_head_units=16 \
+		--warmup_steps=4000 \
+		--scale_factor=0.1 \
+		--mae_threshold_comp=0.21 \
+		--mae_threshold_tre=0.17 \
+		--mae_threshold_sea=0.08 \
+		--cl_margin=0.25 \
+		--patch_size=16 \
+		--prompt_pool_size=40 \
+		--nr_of_most_similar_prompts=7 \
+		--patience=20 \
+		--nr_of_seeds=10 \
+		--nr_of_epochs=10000
+
+train_pt_etth_768: run
+	$(PYTHON) task/pre_train.py \
+		--input_dir="./bin/preprocessed/pt_etth_768" \
+		--output_dir="./bin/models/pt_etth_768" \
+		--mask_rate=0.40 \
+		--mask_scalar=0.00 \
+		--mini_batch_size=128 \
+		--clip_norm=0.10 \
+		--l1_trend=0.0009069200356077791 \
+		--l2_trend=0.00011516902230932779 \
+		--l1_seasonality=6.986327036159758e-06 \
+		--l2_seasonality=1.844456834877414e-05 \
+		--l1_residual=0.0033743574546682815 \
+		--l2_residual=0.00048162281165686684 \
+		--nr_of_encoder_blocks=8 \
+		--nr_of_heads=2 \
+		--dropout_rate=0.1 \
+		--encoder_ffn_units=192 \
+		--embedding_dims=256 \
+		--projection_head_units=16 \
+		--warmup_steps=4000 \
+		--scale_factor=0.1 \
+		--mae_threshold_comp=0.22 \
+		--mae_threshold_tre=0.19 \
+		--mae_threshold_sea=0.08 \
+		--cl_margin=0.25 \
+		--patch_size=32 \
 		--prompt_pool_size=40 \
 		--nr_of_most_similar_prompts=7 \
 		--patience=20 \
@@ -835,3 +931,18 @@ train_ft_baltic_energy_96_96_wo_sequential: run
 		--nr_of_seeds=10 \
 		--nr_of_epochs=10000 \
 		--mini_batch_size=128
+
+# ── Zero-Shot Learning ───────────────────────────────────────────────────────────────────
+zero_shot_etth1_96_96: run
+	$(PYTHON) task/evaluate.py \
+		--input_dir="./bin/preprocessed/ft_ETTh1_96_96/dataset_test/" \
+		--model_dir="./bin/models/ft_etth2_96_96/" \
+		--foundation_model_dir="./bin/models/pt_etth_96/" \
+		--output_dir="./bin/models/zero_shot_etth1_96_96/"
+
+zero_shot_etth2_96_96: run
+	$(PYTHON) task/evaluate.py \
+		--input_dir="./bin/preprocessed/ft_ETTh2_96_96/dataset_test/" \
+		--model_dir="./bin/models/ft_etth1_96_96/" \
+		--foundation_model_dir="./bin/models/pt_etth_96/" \
+		--output_dir="./bin/models/zero_shot_etth2_96_96/"
