@@ -168,43 +168,75 @@ preprocess_pt_etth_768: ID = pt_etth_768
 preprocess_pt_etth_768:
 	$(PIPELINE_PREPROCESS_PRE_TRAINING)
 
+
+compile_pt_ettm_96_data: run
+	$(PYTHON) task/compile_heteregenous_data.py \
+		--input_dir_parent="./bin/interim/" \
+		--children_list="['pt_ETTm1_96', 'pt_ETTm2_96']" \
+		--output_dir="./bin/interim/pt_ettm_96/"
+
+compile_pt_ettm_192_data: run
+	$(PYTHON) task/compile_heteregenous_data.py \
+		--input_dir_parent="./bin/interim/" \
+		--children_list="['pt_ETTm1_192', 'pt_ETTm2_192']" \
+		--output_dir="./bin/interim/pt_ettm_192/"
+
+compile_pt_ettm_384_data: run
+	$(PYTHON) task/compile_heteregenous_data.py \
+		--input_dir_parent="./bin/interim/" \
+		--children_list="['pt_ETTm1_384', 'pt_ETTm2_384']" \
+		--output_dir="./bin/interim/pt_ettm_384/"
+
+compile_pt_ettm_768_data: run
+	$(PYTHON) task/compile_heteregenous_data.py \
+		--input_dir_parent="./bin/interim/" \
+		--children_list="['pt_ETTm1_768', 'pt_ETTm2_768']" \
+		--output_dir="./bin/interim/pt_ettm_768/"
+
+preprocess_pt_ettm_96: ID = pt_ettm_96
+preprocess_pt_ettm_96:
+	$(PYTHON) task/pre_process_pre_training.py \
+		--input_dir="./bin/interim/$(ID)" \
+		--output_dir="./bin/preprocessed/$(ID)" \
+		--pool_size_trend="96" \
+		--sigma="1.96" \
+		--use_timestamp="True"
+
+preprocess_pt_ettm_192: ID = pt_ettm_192
+preprocess_pt_ettm_192:
+	$(PYTHON) task/pre_process_pre_training.py \
+		--input_dir="./bin/interim/$(ID)" \
+		--output_dir="./bin/preprocessed/$(ID)" \
+		--pool_size_trend="96" \
+		--sigma="1.96" \
+		--use_timestamp="True"
+
+preprocess_pt_ettm_384: ID = pt_ettm_384
+preprocess_pt_ettm_384:
+	$(PYTHON) task/pre_process_pre_training.py \
+		--input_dir="./bin/interim/$(ID)" \
+		--output_dir="./bin/preprocessed/$(ID)" \
+		--pool_size_trend="96" \
+		--sigma="1.96" \
+		--use_timestamp="True"
+
+preprocess_pt_ettm_768: ID = pt_ettm_768
+preprocess_pt_ettm_768:
+	$(PYTHON) task/pre_process_pre_training.py \
+		--input_dir="./bin/interim/$(ID)" \
+		--output_dir="./bin/preprocessed/$(ID)" \
+		--pool_size_trend="96" \
+		--sigma="1.96" \
+		--use_timestamp="True"
+
 preprocess_pt: \
-	preprocess_pt_etth_96 preprocess_pt_etth_192 preprocess_pt_etth_384 preprocess_pt_etth_768
+	preprocess_pt_etth_96 preprocess_pt_etth_192 preprocess_pt_etth_384 preprocess_pt_etth_768 \
+	preprocess_pt_ettm_96 preprocess_pt_ettm_192 preprocess_pt_ettm_384 preprocess_pt_ettm_768
 
 hp_tune_pt_etth_96: run
 	$(PYTHON) task/tune_hyperparameters.py \
 		--input_dir="./bin/preprocessed/pt_etth_96" \
 		--output_dir="./bin/hp-tuning/pt_etth_96" \
-		--mini_batch_size=128 \
-		--max_epochs=27 \
-		--executions_per_trial=1 \
-		--factor=3 \
-		--training_mode="sequential"
-
-hp_tune_pt_etth_192: run
-	$(PYTHON) task/tune_hyperparameters.py \
-		--input_dir="./bin/preprocessed/pt_etth_192" \
-		--output_dir="./bin/hp-tuning/pt_etth_192" \
-		--mini_batch_size=128 \
-		--max_epochs=27 \
-		--executions_per_trial=1 \
-		--factor=3 \
-		--training_mode="sequential"
-
-hp_tune_pt_etth_384: run
-	$(PYTHON) task/tune_hyperparameters.py \
-		--input_dir="./bin/preprocessed/pt_etth_384" \
-		--output_dir="./bin/hp-tuning/pt_etth_384" \
-		--mini_batch_size=128 \
-		--max_epochs=27 \
-		--executions_per_trial=1 \
-		--factor=3 \
-		--training_mode="sequential"
-
-hp_tune_pt_etth_768: run
-	$(PYTHON) task/tune_hyperparameters.py \
-		--input_dir="./bin/preprocessed/pt_etth_768" \
-		--output_dir="./bin/hp-tuning/pt_etth_768" \
 		--mini_batch_size=128 \
 		--max_epochs=27 \
 		--executions_per_trial=1 \
@@ -243,6 +275,44 @@ train_pt_etth_96: run
 		--patience=20 \
 		--nr_of_seeds=10 \
 		--nr_of_epochs=10000
+
+
+train_pt_ettm_96: run
+	$(PYTHON) task/pre_train.py \
+		--input_dir="./bin/preprocessed/pt_ettm_96" \
+		--output_dir="./bin/models/pt_ettm_96" \
+		--mask_rate=0.40 \
+		--mask_scalar=0.00 \
+		--mini_batch_size=128 \
+		--clip_norm=0.10 \
+		--l1_trend=0.0009069200356077791 \
+		--l2_trend=0.00011516902230932779 \
+		--l1_seasonality=6.986327036159758e-06 \
+		--l2_seasonality=1.844456834877414e-05 \
+		--l1_residual=0.0033743574546682815 \
+		--l2_residual=0.00048162281165686684 \
+		--nr_of_encoder_blocks=8 \
+		--nr_of_heads=2 \
+		--dropout_rate=0.1 \
+		--encoder_ffn_units=192 \
+		--embedding_dims=256 \
+		--projection_head_units=16 \
+		--warmup_steps=4000 \
+		--scale_factor=0.1 \
+		--mae_threshold_comp=0.12 \
+		--mae_threshold_tre=0.01 \
+		--mae_threshold_sea=0.05 \
+		--cl_margin=0.25 \
+		--patch_size=4 \
+		--prompt_pool_size=40 \
+		--nr_of_most_similar_prompts=7 \
+		--patience=20 \
+		--nr_of_seeds=10 \
+		--nr_of_epochs=10000
+
+
+
+
 
 train_pt_etth_192: run
 	$(PYTHON) task/pre_train.py \
@@ -378,7 +448,11 @@ preprocess_ft_ETTh2_768_720:
 
 preprocess_ft_ETTm1_96_96: ID = ft_ETTm1_96_96
 preprocess_ft_ETTm1_96_96:
-	$(PIPELINE_PREPROCESS_FINE_TUNING)
+	$(PYTHON) task/pre_process_fine_tuning.py \
+		--input_dir="./bin/interim/$(ID)" \
+		--output_dir="./bin/preprocessed/$(ID)" \
+		--pool_size_trend="96" \
+		--sigma="1.96"
 
 preprocess_ft_ETTm1_192_192: ID = ft_ETTm1_192_192
 preprocess_ft_ETTm1_192_192:
@@ -394,7 +468,11 @@ preprocess_ft_ETTm1_768_720:
 
 preprocess_ft_ETTm2_96_96: ID = ft_ETTm2_96_96
 preprocess_ft_ETTm2_96_96:
-	$(PIPELINE_PREPROCESS_FINE_TUNING)
+	$(PYTHON) task/pre_process_fine_tuning.py \
+		--input_dir="./bin/interim/$(ID)" \
+		--output_dir="./bin/preprocessed/$(ID)" \
+		--pool_size_trend="96" \
+		--sigma="1.96"
 
 preprocess_ft_ETTm2_192_192: ID = ft_ETTm2_192_192
 preprocess_ft_ETTm2_192_192:
@@ -441,6 +519,174 @@ train_ft_etth2_96_96: run
 		--nr_of_seeds=10 \
 		--nr_of_epochs=10000 \
 		--mini_batch_size=128
+
+train_ft_ettm1_96_96: run
+	$(PYTHON) task/fine_tune.py \
+		--input_dir="./bin/preprocessed/ft_ETTm1_96_96/" \
+		--output_dir="./bin/models/ft_ettm1_96_96/" \
+		--pre_trained_model_dir="./bin/models/pt_etth_96/" \
+		--patience=10 \
+		--clip_norm=0.10 \
+		--learning_rate=0.00001 \
+		--warmup_epochs=1 \
+		--tune_time2vec="True" \
+		--nr_of_seeds=10 \
+		--nr_of_epochs=10000 \
+		--mini_batch_size=128
+
+train_ft_ettm2_96_96: run
+	$(PYTHON) task/fine_tune.py \
+		--input_dir="./bin/preprocessed/ft_ETTm2_96_96/" \
+		--output_dir="./bin/models/ft_ettm2_96_96/" \
+		--pre_trained_model_dir="./bin/models/pt_etth_96/" \
+		--patience=10 \
+		--clip_norm=0.10 \
+		--learning_rate=0.00001 \
+		--warmup_epochs=1 \
+		--tune_time2vec="True" \
+		--nr_of_seeds=10 \
+		--nr_of_epochs=10000 \
+		--mini_batch_size=128
+
+train_ft_etth1_192_192: run
+	$(PYTHON) task/fine_tune.py \
+		--input_dir="./bin/preprocessed/ft_ETTh1_192_192/" \
+		--output_dir="./bin/models/ft_etth1_192_192/" \
+		--pre_trained_model_dir="./bin/models/pt_etth_192/" \
+		--patience=10 \
+		--clip_norm=0.10 \
+		--learning_rate=0.00001 \
+		--warmup_epochs=1 \
+		--tune_time2vec="True" \
+		--nr_of_seeds=10 \
+		--nr_of_epochs=10000 \
+		--mini_batch_size=128
+
+train_ft_etth2_192_192: run
+	$(PYTHON) task/fine_tune.py \
+		--input_dir="./bin/preprocessed/ft_ETTh2_192_192/" \
+		--output_dir="./bin/models/ft_etth2_192_192/" \
+		--pre_trained_model_dir="./bin/models/pt_etth_192/" \
+		--patience=10 \
+		--clip_norm=0.10 \
+		--learning_rate=0.00001 \
+		--warmup_epochs=1 \
+		--tune_time2vec="True" \
+		--nr_of_seeds=10 \
+		--nr_of_epochs=10000 \
+		--mini_batch_size=128
+
+train_ft_ettm1_192_192: run
+	$(PYTHON) task/fine_tune.py \
+		--input_dir="./bin/preprocessed/ft_ETTm1_192_192/" \
+		--output_dir="./bin/models/ft_ettm1_192_192/" \
+		--pre_trained_model_dir="./bin/models/pt_etth_192/" \
+		--patience=10 \
+		--clip_norm=0.10 \
+		--learning_rate=0.00001 \
+		--warmup_epochs=1 \
+		--tune_time2vec="True" \
+		--nr_of_seeds=10 \
+		--nr_of_epochs=10000 \
+		--mini_batch_size=128
+
+train_ft_ettm2_192_192: run
+	$(PYTHON) task/fine_tune.py \
+		--input_dir="./bin/preprocessed/ft_ETTm2_192_192/" \
+		--output_dir="./bin/models/ft_ettm2_192_192/" \
+		--pre_trained_model_dir="./bin/models/pt_etth_192/" \
+		--patience=10 \
+		--clip_norm=0.10 \
+		--learning_rate=0.00001 \
+		--warmup_epochs=1 \
+		--tune_time2vec="True" \
+		--nr_of_seeds=10 \
+		--nr_of_epochs=10000 \
+		--mini_batch_size=128
+
+train_ft_etth1_384_336: run
+	$(PYTHON) task/fine_tune.py \
+		--input_dir="./bin/preprocessed/ft_ETTh1_384_336/" \
+		--output_dir="./bin/models/ft_etth1_384_336/" \
+		--pre_trained_model_dir="./bin/models/pt_etth_384/" \
+		--patience=10 \
+		--clip_norm=0.10 \
+		--learning_rate=0.00001 \
+		--warmup_epochs=1 \
+		--tune_time2vec="True" \
+		--nr_of_seeds=10 \
+		--nr_of_epochs=10000 \
+		--mini_batch_size=32
+
+train_ft_etth2_384_336: run
+	$(PYTHON) task/fine_tune.py \
+		--input_dir="./bin/preprocessed/ft_ETTh2_384_336/" \
+		--output_dir="./bin/models/ft_etth2_384_336/" \
+		--pre_trained_model_dir="./bin/models/pt_etth_384/" \
+		--patience=10 \
+		--clip_norm=0.10 \
+		--learning_rate=0.00001 \
+		--warmup_epochs=1 \
+		--tune_time2vec="True" \
+		--nr_of_seeds=10 \
+		--nr_of_epochs=10000 \
+		--mini_batch_size=32
+
+train_ft_ettm1_384_336: run
+	$(PYTHON) task/fine_tune.py \
+		--input_dir="./bin/preprocessed/ft_ETTm1_384_336/" \
+		--output_dir="./bin/models/ft_ettm1_384_336/" \
+		--pre_trained_model_dir="./bin/models/pt_etth_384/" \
+		--patience=10 \
+		--clip_norm=0.10 \
+		--learning_rate=0.00001 \
+		--warmup_epochs=1 \
+		--tune_time2vec="True" \
+		--nr_of_seeds=10 \
+		--nr_of_epochs=10000 \
+		--mini_batch_size=32
+
+train_ft_ettm2_384_336: run
+	$(PYTHON) task/fine_tune.py \
+		--input_dir="./bin/preprocessed/ft_ETTm2_384_336/" \
+		--output_dir="./bin/models/ft_ettm2_384_336/" \
+		--pre_trained_model_dir="./bin/models/pt_etth_384/" \
+		--patience=10 \
+		--clip_norm=0.10 \
+		--learning_rate=0.00001 \
+		--warmup_epochs=1 \
+		--tune_time2vec="True" \
+		--nr_of_seeds=10 \
+		--nr_of_epochs=10000 \
+		--mini_batch_size=32
+
+train_ft_etth1_768_720: run
+	$(PYTHON) task/fine_tune.py \
+		--input_dir="./bin/preprocessed/ft_ETTh1_768_720/" \
+		--output_dir="./bin/models/ft_etth1_768_720/" \
+		--pre_trained_model_dir="./bin/models/pt_etth_768/" \
+		--patience=10 \
+		--clip_norm=0.10 \
+		--learning_rate=0.00001 \
+		--warmup_epochs=1 \
+		--tune_time2vec="True" \
+		--nr_of_seeds=10 \
+		--nr_of_epochs=10000 \
+		--mini_batch_size=8
+
+train_ft_etth2_768_720: run
+	$(PYTHON) task/fine_tune.py \
+		--input_dir="./bin/preprocessed/ft_ETTh2_768_720/" \
+		--output_dir="./bin/models/ft_etth2_768_720/" \
+		--pre_trained_model_dir="./bin/models/pt_etth_768/" \
+		--patience=10 \
+		--clip_norm=0.10 \
+		--learning_rate=0.00001 \
+		--warmup_epochs=1 \
+		--tune_time2vec="True" \
+		--nr_of_seeds=10 \
+		--nr_of_epochs=10000 \
+		--mini_batch_size=8
 
 # ── Ablation Studies ───────────────────────────────────────────────────────────────────
 PT_ETTH_96_WO_SEQ_ARGS = \

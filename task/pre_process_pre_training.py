@@ -68,19 +68,14 @@ if __name__ == '__main__':
         scale_data=False,
         use_timestamp=use_timestamp)
 
-    lb_train_val = np.concatenate((lb_train, lb_val), axis=0)
     if use_timestamp:
-        ts_train_val = np.concatenate((ts_train, ts_val), axis=0)
-
         input_train = (lb_train, ts_train)
         input_val = (lb_val, ts_val)
         input_test = (lb_test, ts_test)
-        input_train_val = (lb_train_val, ts_train_val)
     else:
         input_train = (lb_train, )
         input_val = (lb_val, )
         input_test = (lb_test, )
-        input_train_val = (lb_train_val, )
 
     # process
     ds_train = input_pre_processor(input_train)

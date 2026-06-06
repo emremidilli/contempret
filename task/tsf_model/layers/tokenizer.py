@@ -72,7 +72,7 @@ class TrendSeasonalityTokenizer(tf.keras.layers.Layer):
                 trend and seasonality components from the
                 original input.
 
-        returns:  tuple of 2 elements
+        returns:  tuple of 3 elements
             1. y_trend - (None, timesteps, covariates)
             2. y_seasonality - (None, timesteps, covariates)
             3. y_residual - (None, timesteps, covariates)
